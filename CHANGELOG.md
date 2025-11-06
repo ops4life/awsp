@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+# 1.0.0 (2025-11-06)
+
+
+### Features
+
+* initial implementation of awsp - AWS profile switcher with SSO support ([#1](https://github.com/duyluann/awsp/issues/1)) ([50c3f28](https://github.com/duyluann/awsp/commit/50c3f283e92bbb0190d087aa2ad23e467378fe75))
+
 ## [1.12.1](https://github.com/duyluann/github-repo-template/compare/v1.12.0...v1.12.1) (2025-08-13)
 
 

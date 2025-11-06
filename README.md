@@ -10,6 +10,7 @@ Tiny cross-shell function to switch AWS profiles (with SSO auto-login if needed)
 
 ```bash
 git clone https://github.com/duyluann/awsp.git
+cd awsp
 
 make install
 

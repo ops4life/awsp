@@ -169,7 +169,7 @@ sequenceDiagram
     participant awsp as awsp function
     participant AWS as AWS CLI
     participant Config as Shell RC Files
-    
+
     User->>awsp: awsp [profile]
     alt --current flag
         awsp->>User: Print current AWS_PROFILE

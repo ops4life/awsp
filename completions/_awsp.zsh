@@ -9,12 +9,16 @@ _awsp() {
   _arguments \
     '-h[show help]' \
     '--help[show help]' \
+    '-V[show version]' \
+    '--version[show version]' \
     '-l[list profiles]' \
     '--list[list profiles]' \
     '-c[current profile]' \
     '--current[current profile]' \
     '-u[unset env]' \
     '--unset[unset env]' \
+    '-U[upgrade awsp]' \
+    '--upgrade[upgrade awsp]' \
     '-L[force sso login]' \
     '--login[force sso login]' \
     '-v[verify via STS]' \

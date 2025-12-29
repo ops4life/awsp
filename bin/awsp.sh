@@ -2,6 +2,8 @@
 # shellcheck shell=sh
 # Source this file from your shell (installer will add it to your rc).
 
+AWSP_VERSION="1.1.0"
+
 # Auto-load saved profile on shell startup (silent)
 if [ -f "$HOME/.config/awsp/current_profile" ] && [ -z "${AWS_PROFILE-}" ]; then
   _awsp_saved_profile="$(cat "$HOME/.config/awsp/current_profile" 2>/dev/null || true)"
@@ -22,6 +24,7 @@ awsp() {
   show_current=0
   force_login=0
   unset_only=0
+  upgrade=0
   verify=auto        # auto|on|off
   quiet=0
   outfmt=table       # table|json
@@ -36,9 +39,11 @@ a numbered list will be shown.
 
 Options:
   -h, --help         Show help and exit
+  -V, --version      Show version and exit
   -l, --list         List profiles and exit
   -c, --current      Print current AWS profile and exit
   -u, --unset        Unset AWS profile & static creds and exit
+  -U, --upgrade      Upgrade awsp to latest version
   -L, --login        Force "aws sso login" for the selected/current profile
   -v, --verify       Verify identity via STS (default: auto)
       --no-verify    Do not verify identity
@@ -51,9 +56,11 @@ USG
   while [ "$#" -gt 0 ]; do
     case "$1" in
       -h|--help) usage; return 0 ;;
+      -V|--version) echo "awsp version $AWSP_VERSION"; return 0 ;;
       -l|--list) list_only=1 ;;
       -c|--current) show_current=1 ;;
       -u|--unset) unset_only=1 ;;
+      -U|--upgrade) upgrade=1 ;;
       -L|--login) force_login=1 ;;
       -v|--verify) verify=on ;;
       --no-verify) verify=off ;;
@@ -77,6 +84,347 @@ USG
     [ "$quiet" -eq 0 ] && echo "→ AWS env cleared"
   }
 
+  _awsp_detect_install_type() {
+    # Returns: "git" or "release"
+    _script_path="${BASH_SOURCE[0]:-${(%):-%x}}"
+    _script_dir="$(cd "$(dirname "$_script_path")" && pwd)"
+    _check_dir="$_script_dir"
+    _depth=0
+    while [ "$_depth" -lt 5 ]; do
+      if [ -d "$_check_dir/.git" ]; then
+        echo "git"
+        return 0
+      fi
+      _parent="$(dirname "$_check_dir")"
+      if [ "$_parent" = "$_check_dir" ]; then break; fi
+      _check_dir="$_parent"
+      _depth=$((_depth + 1))
+    done
+    echo "release"
+  }
+
+  _awsp_fetch_latest_version() {
+    if ! command -v curl >/dev/null 2>&1; then
+      echo "Error: curl is required for upgrade feature" >&2
+      return 1
+    fi
+
+    _api_url="https://api.github.com/repos/duyluann/awsp/releases/latest"
+    _response=$(curl -s -f "$_api_url" 2>/dev/null) || {
+      echo "Error: Failed to fetch latest version from GitHub" >&2
+      return 1
+    }
+
+    # Parse JSON (POSIX-compliant)
+    _version=$(echo "$_response" | grep '"tag_name"' | sed 's/.*"tag_name": *"\([^"]*\)".*/\1/' | sed 's/^v//')
+    _body=$(echo "$_response" | sed -n '/"body":/,/"draft":/p' | sed '1d;$d')
+
+    printf '%s\n%s\n' "$_version" "$_body"
+  }
+
+  _awsp_version_compare() {
+    # Returns: 0 if $1 == $2, 1 if $1 > $2, 2 if $1 < $2
+    _v1="$1"
+    _v2="$2"
+
+    if [ "$_v1" = "$_v2" ]; then
+      return 0
+    fi
+
+    _v1_major=$(echo "$_v1" | cut -d. -f1)
+    _v1_minor=$(echo "$_v1" | cut -d. -f2)
+    _v1_patch=$(echo "$_v1" | cut -d. -f3)
+
+    _v2_major=$(echo "$_v2" | cut -d. -f1)
+    _v2_minor=$(echo "$_v2" | cut -d. -f2)
+    _v2_patch=$(echo "$_v2" | cut -d. -f3)
+
+    if [ "$_v1_major" -gt "$_v2_major" ]; then return 1; fi
+    if [ "$_v1_major" -lt "$_v2_major" ]; then return 2; fi
+    if [ "$_v1_minor" -gt "$_v2_minor" ]; then return 1; fi
+    if [ "$_v1_minor" -lt "$_v2_minor" ]; then return 2; fi
+    if [ "$_v1_patch" -gt "$_v2_patch" ]; then return 1; fi
+    if [ "$_v1_patch" -lt "$_v2_patch" ]; then return 2; fi
+
+    return 0
+  }
+
+  _awsp_get_installed_version() {
+    _file="${1:-$HOME/.config/awsp/awsp.sh}"
+    if [ ! -f "$_file" ]; then
+      echo "unknown"
+      return 1
+    fi
+    grep '^AWSP_VERSION=' "$_file" | head -1 | sed 's/AWSP_VERSION="\(.*\)"/\1/'
+  }
+
+  _awsp_upgrade_git() {
+    _install_dir="$1"
+    _repo_root="$2"
+
+    echo "→ Detected git installation at $_repo_root"
+    echo "→ Running git pull..."
+
+    # Save current directory
+    _pwd="$PWD"
+
+    # Navigate to repo and pull
+    cd "$_repo_root" || {
+      echo "Error: Cannot access repository directory" >&2
+      cd "$_pwd"
+      return 1
+    }
+
+    # Check for uncommitted changes
+    if ! git diff-index --quiet HEAD -- 2>/dev/null; then
+      echo "Warning: You have uncommitted changes in $_repo_root"
+      echo "Stash or commit them before upgrading."
+      cd "$_pwd"
+      return 1
+    fi
+
+    # Pull latest changes
+    git pull origin main >/dev/null 2>&1 || {
+      echo "Error: git pull failed" >&2
+      cd "$_pwd"
+      return 1
+    }
+
+    # Re-run make install
+    if [ -f "$_repo_root/Makefile" ]; then
+      echo "→ Re-installing from source..."
+      make -C "$_repo_root" install >/dev/null 2>&1 || {
+        echo "Error: make install failed" >&2
+        cd "$_pwd"
+        return 1
+      }
+    fi
+
+    cd "$_pwd"
+
+    # Verify new version
+    _new_version=$(_awsp_get_installed_version)
+    echo "→ Successfully upgraded to version $_new_version"
+    echo "→ Restart your shell or run: . \"$_install_dir/awsp.sh\""
+
+    return 0
+  }
+
+  _awsp_upgrade_release() {
+    _install_dir="$1"
+    _target_version="$2"
+
+    echo "→ Downloading awsp v$_target_version..."
+
+    # Create temporary directory
+    _tmp_dir="${TMPDIR:-/tmp}/awsp-upgrade-$$"
+    mkdir -p "$_tmp_dir" || {
+      echo "Error: Cannot create temporary directory" >&2
+      return 1
+    }
+
+    # Download tarball
+    _tarball_url="https://github.com/duyluann/awsp/archive/refs/tags/v${_target_version}.tar.gz"
+    _tarball="$_tmp_dir/awsp.tar.gz"
+
+    if ! curl -L -s -f -o "$_tarball" "$_tarball_url"; then
+      echo "Error: Failed to download release tarball" >&2
+      rm -rf "$_tmp_dir"
+      return 1
+    fi
+
+    echo "→ Extracting files..."
+
+    # Extract tarball
+    if ! tar -xzf "$_tarball" -C "$_tmp_dir"; then
+      echo "Error: Failed to extract tarball" >&2
+      rm -rf "$_tmp_dir"
+      return 1
+    fi
+
+    # Find extracted directory (should be awsp-VERSION)
+    _extracted_dir="$_tmp_dir/awsp-${_target_version}"
+    if [ ! -d "$_extracted_dir" ]; then
+      echo "Error: Unexpected tarball structure" >&2
+      rm -rf "$_tmp_dir"
+      return 1
+    fi
+
+    echo "→ Backing up current installation..."
+
+    # Backup current installation
+    _backup_dir="${_install_dir}.backup"
+    rm -rf "$_backup_dir"
+    cp -a "$_install_dir" "$_backup_dir" || {
+      echo "Error: Failed to create backup" >&2
+      rm -rf "$_tmp_dir"
+      return 1
+    }
+
+    echo "→ Installing new version..."
+
+    # Copy new files
+    if ! cp -f "$_extracted_dir/bin/awsp.sh" "$_install_dir/awsp.sh"; then
+      echo "Error: Failed to install awsp.sh, restoring backup..." >&2
+      rm -rf "$_install_dir"
+      mv "$_backup_dir" "$_install_dir"
+      rm -rf "$_tmp_dir"
+      return 1
+    fi
+
+    if ! cp -f "$_extracted_dir/completions/awsp.bash" "$_install_dir/completions/awsp.bash"; then
+      echo "Warning: Failed to install bash completion" >&2
+    fi
+
+    if ! cp -f "$_extracted_dir/completions/_awsp.zsh" "$_install_dir/completions/_awsp.zsh"; then
+      echo "Warning: Failed to install zsh completion" >&2
+    fi
+
+    # Copy _awsp (zsh completion symlink)
+    if ! cp -f "$_extracted_dir/completions/_awsp.zsh" "$_install_dir/completions/_awsp"; then
+      echo "Warning: Failed to install zsh completion" >&2
+    fi
+
+    # Verify installation
+    _new_version=$(_awsp_get_installed_version "$_install_dir/awsp.sh")
+    if [ "$_new_version" != "$_target_version" ]; then
+      echo "Error: Version mismatch after upgrade (expected $_target_version, got $_new_version)" >&2
+      echo "Restoring backup..." >&2
+      rm -rf "$_install_dir"
+      mv "$_backup_dir" "$_install_dir"
+      rm -rf "$_tmp_dir"
+      return 1
+    fi
+
+    # Clean up
+    rm -rf "$_backup_dir" "$_tmp_dir"
+
+    echo "→ Successfully upgraded to version $_target_version"
+    echo "→ Restart your shell or run: . \"$_install_dir/awsp.sh\""
+
+    return 0
+  }
+
+  _awsp_upgrade() {
+    echo "awsp upgrade"
+    echo "────────────"
+
+    # Detect installation directory
+    _script_path="${BASH_SOURCE[0]:-${(%):-%x}}"
+    _install_dir="$(cd "$(dirname "$_script_path")" && pwd)"
+
+    # Show current version
+    echo "Current version: $AWSP_VERSION"
+
+    # Detect installation type
+    _install_type=$(_awsp_detect_install_type)
+
+    if [ "$_install_type" = "git" ]; then
+      echo "Installation type: git"
+
+      # Find git repo root
+      _check_dir="$_install_dir"
+      _repo_root=""
+      _depth=0
+      while [ "$_depth" -lt 5 ]; do
+        if [ -d "$_check_dir/.git" ]; then
+          _repo_root="$_check_dir"
+          break
+        fi
+        _parent="$(dirname "$_check_dir")"
+        if [ "$_parent" = "$_check_dir" ]; then break; fi
+        _check_dir="$_parent"
+        _depth=$((_depth + 1))
+      done
+
+      if [ -z "$_repo_root" ]; then
+        echo "Error: Could not find git repository root" >&2
+        return 1
+      fi
+
+      # Check if git is installed
+      if ! command -v git >/dev/null 2>&1; then
+        echo "Error: git is required but not found in PATH" >&2
+        return 1
+      fi
+
+      # Fetch latest from remote
+      echo "→ Checking for updates..."
+      _pwd="$PWD"
+      cd "$_repo_root" || return 1
+      git fetch origin main >/dev/null 2>&1
+
+      _local_commit=$(git rev-parse HEAD 2>/dev/null)
+      _remote_commit=$(git rev-parse origin/main 2>/dev/null)
+
+      cd "$_pwd"
+
+      if [ "$_local_commit" = "$_remote_commit" ]; then
+        echo "→ Already up to date!"
+        return 0
+      fi
+
+      echo "→ Updates available"
+      echo ""
+
+      # Show confirmation
+      printf 'Proceed with upgrade? (y/N): '
+      read -r response
+      case "$response" in
+        y|Y|yes|YES) ;;
+        *) echo "Upgrade cancelled."; return 1 ;;
+      esac
+
+      _awsp_upgrade_git "$_install_dir" "$_repo_root"
+
+    else
+      echo "Installation type: release"
+
+      # Fetch latest version from GitHub
+      echo "→ Checking for updates..."
+
+      _fetch_result=$(_awsp_fetch_latest_version)
+      if [ $? -ne 0 ]; then
+        return 1
+      fi
+
+      _latest_version=$(echo "$_fetch_result" | head -1)
+      _changelog=$(echo "$_fetch_result" | tail -n +2)
+
+      echo "Latest version:  $_latest_version"
+      echo ""
+
+      # Compare versions
+      _awsp_version_compare "$AWSP_VERSION" "$_latest_version"
+      _cmp=$?
+
+      if [ $_cmp -eq 0 ]; then
+        echo "→ Already up to date!"
+        return 0
+      elif [ $_cmp -eq 1 ]; then
+        echo "→ Your version is newer than the latest release!"
+        return 0
+      fi
+
+      # Show changelog
+      echo "What's new in $_latest_version:"
+      echo "────────────────────────────────"
+      echo "$_changelog"
+      echo "────────────────────────────────"
+      echo ""
+
+      # Show confirmation
+      printf 'Proceed with upgrade? (y/N): '
+      read -r response
+      case "$response" in
+        y|Y|yes|YES) ;;
+        *) echo "Upgrade cancelled."; return 1 ;;
+      esac
+
+      _awsp_upgrade_release "$_install_dir" "$_latest_version"
+    fi
+  }
+
   # Quick actions
   if [ "$show_current" -eq 1 ]; then
     if [ -n "${AWS_PROFILE-}" ]; then echo "$AWS_PROFILE"; else echo "(no AWS_PROFILE set)"; fi
@@ -85,6 +433,11 @@ USG
 
   if [ "$unset_only" -eq 1 ]; then
     _awsp_unset; return 0
+  fi
+
+  if [ "$upgrade" -eq 1 ]; then
+    _awsp_upgrade
+    return $?
   fi
 
   has_aws=0

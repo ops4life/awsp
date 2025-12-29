@@ -58,9 +58,11 @@ awsp [options] [PROFILE]
 
 Options:
   -h, --help         Show help and exit
+  -V, --version      Show version and exit
   -l, --list         List profiles and exit
   -c, --current      Print current AWS profile and exit
   -u, --unset        Unset AWS profile & static creds and exit
+  -U, --upgrade      Upgrade awsp to latest version
   -L, --login        Force "aws sso login" for the selected/current profile
   -v, --verify       Verify identity via STS (default: auto)
       --no-verify    Do not verify identity
@@ -110,6 +112,18 @@ Quiet mode (minimal output):
 
 ```bash
 awsp -q prod
+```
+
+Show version:
+
+```bash
+awsp --version
+```
+
+Upgrade to latest version:
+
+```bash
+awsp --upgrade
 ```
 
 ### Shell Completion

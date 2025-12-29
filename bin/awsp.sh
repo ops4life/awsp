@@ -2,6 +2,17 @@
 # shellcheck shell=sh
 # Source this file from your shell (installer will add it to your rc).
 
+# Auto-load saved profile on shell startup (silent)
+if [ -f "$HOME/.config/awsp/current_profile" ] && [ -z "${AWS_PROFILE-}" ]; then
+  _awsp_saved_profile="$(cat "$HOME/.config/awsp/current_profile" 2>/dev/null || true)"
+  if [ -n "$_awsp_saved_profile" ]; then
+    export AWS_SDK_LOAD_CONFIG=1
+    export AWS_PROFILE="$_awsp_saved_profile"
+    export AWS_DEFAULT_PROFILE="$_awsp_saved_profile"
+  fi
+  unset _awsp_saved_profile
+fi
+
 awsp() {
   # Make zsh behave POSIX-y inside this function
   [ -n "${ZSH_VERSION-}" ] && emulate -L sh
@@ -61,6 +72,8 @@ USG
   _awsp_unset() {
     unset AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY AWS_SESSION_TOKEN
     unset AWS_PROFILE AWS_DEFAULT_PROFILE
+    # Remove saved profile
+    rm -f "$HOME/.config/awsp/current_profile" 2>/dev/null || true
     [ "$quiet" -eq 0 ] && echo "→ AWS env cleared"
   }
 
@@ -128,6 +141,11 @@ USG
   export AWS_PROFILE="$profile"
   export AWS_DEFAULT_PROFILE="$profile"
   [ "$quiet" -eq 0 ] && echo "→ Switched to $AWS_PROFILE"
+
+  # Save profile for auto-load in future shells (silent)
+  if mkdir -p "$HOME/.config/awsp" 2>/dev/null; then
+    printf '%s\n' "$profile" > "$HOME/.config/awsp/current_profile" 2>/dev/null || true
+  fi
 
   # ---------- verify / login logic ----------
   if [ "$has_aws" -eq 1 ]; then

@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+# [1.1.0](https://github.com/duyluann/awsp/compare/v1.0.0...v1.1.0) (2025-12-29)
+
+
+### Features
+
+* add automatic profile persistence across shell sessions ([#23](https://github.com/duyluann/awsp/issues/23)) ([6b2f390](https://github.com/duyluann/awsp/commit/6b2f39013f5d739b12782851147d2931cc9568c0))
+
 # 1.0.0 (2025-11-06)
 
 

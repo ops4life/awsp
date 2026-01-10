@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+# [1.3.0](https://github.com/duyluann/awsp/compare/v1.2.1...v1.3.0) (2026-01-10)
+
+
+### Features
+
+* dynamic credential management with SSO detection ([#31](https://github.com/duyluann/awsp/issues/31)) ([0d0773c](https://github.com/duyluann/awsp/commit/0d0773cd01d137caae0718dd428b4d1a38779449))
+
 ## [1.2.1](https://github.com/duyluann/awsp/compare/v1.2.0...v1.2.1) (2026-01-10)
 
 

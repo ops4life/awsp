@@ -2,7 +2,7 @@
 # shellcheck shell=sh
 # Source this file from your shell (installer will add it to your rc).
 
-AWSP_VERSION="1.2.1"
+AWSP_VERSION="1.3.0"
 
 # Helper to check if profile is SSO-based
 _awsp_is_sso_profile() {

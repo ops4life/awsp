@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.2.1](https://github.com/duyluann/awsp/compare/v1.2.0...v1.2.1) (2026-01-10)
+
+
+### Bug Fixes
+
+* unset static credentials during profile auto-load ([#30](https://github.com/duyluann/awsp/issues/30)) ([c9596ab](https://github.com/duyluann/awsp/commit/c9596ab020bd5292096af8a78b880d2df12e0d9d))
+
 # [1.2.0](https://github.com/duyluann/awsp/compare/v1.1.0...v1.2.0) (2025-12-29)
 
 

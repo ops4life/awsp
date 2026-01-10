@@ -2,7 +2,7 @@
 # shellcheck shell=sh
 # Source this file from your shell (installer will add it to your rc).
 
-AWSP_VERSION="1.2.0"
+AWSP_VERSION="1.2.1"
 
 # Auto-load saved profile on shell startup (silent)
 if [ -f "$HOME/.config/awsp/current_profile" ] && [ -z "${AWS_PROFILE-}" ]; then

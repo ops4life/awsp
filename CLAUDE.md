@@ -50,6 +50,14 @@ git push -u origin feature/your-feature-name
 
 The `main` branch is protected and triggers automated releases via semantic-release on merge.
 
+### Commit Guidelines
+
+When creating commits:
+- Follow Conventional Commits specification (e.g., `fix:`, `feat:`, `chore:`)
+- Write clear, concise commit messages focused on the "why" rather than the "what"
+- **Do NOT include AI attribution** (e.g., `Co-Authored-By: Claude`) in commit messages
+- Keep commits focused on a single logical change
+
 ## Development Commands
 
 ### Testing Installation Locally

@@ -8,6 +8,8 @@ AWSP_VERSION="1.2.0"
 if [ -f "$HOME/.config/awsp/current_profile" ] && [ -z "${AWS_PROFILE-}" ]; then
   _awsp_saved_profile="$(cat "$HOME/.config/awsp/current_profile" 2>/dev/null || true)"
   if [ -n "$_awsp_saved_profile" ]; then
+    # Unset static credentials to avoid conflicts with profile-based auth
+    unset AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY AWS_SESSION_TOKEN
     export AWS_SDK_LOAD_CONFIG=1
     export AWS_PROFILE="$_awsp_saved_profile"
     export AWS_DEFAULT_PROFILE="$_awsp_saved_profile"

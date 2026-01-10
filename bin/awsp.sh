@@ -4,17 +4,168 @@
 
 AWSP_VERSION="1.2.1"
 
+# Helper to check if profile is SSO-based
+_awsp_is_sso_profile() {
+  _check_profile="$1"
+  _config_file="$HOME/.aws/config"
+
+  [ ! -f "$_config_file" ] && return 1
+  [ ! -r "$_config_file" ] && return 1
+
+  # Look for profile section and check for SSO configuration
+  _in_section=0
+  _section_name=""
+  while IFS= read -r line; do
+    case "$line" in
+      "["*"]")
+        # Extract section name
+        _section_name="$(echo "$line" | sed 's/\[//;s/\]//')"
+        # Remove "profile " prefix if present
+        _section_name="$(echo "$_section_name" | sed 's/^profile[[:space:]]*//;s/^[[:space:]]*//;s/[[:space:]]*$//')"
+        if [ "$_section_name" = "$_check_profile" ]; then
+          _in_section=1
+        else
+          _in_section=0
+        fi
+        ;;
+      *)
+        if [ "$_in_section" -eq 1 ]; then
+          case "$line" in
+            sso_start_url*|sso_region*|sso_account_id*|sso_role_name*)
+              return 0
+              ;;
+          esac
+        fi
+        ;;
+    esac
+  done < "$_config_file"
+
+  return 1
+}
+
+# Helper to disable static credentials for SSO profiles (used by auto-load and awsp function)
+_awsp_disable_static_creds_startup() {
+  _target_profile="$1"
+
+  # Only disable static credentials if this is an SSO profile
+  if ! _awsp_is_sso_profile "$_target_profile"; then
+    return 0
+  fi
+
+  _creds_file="$HOME/.aws/credentials"
+
+  [ ! -f "$_creds_file" ] && return 0
+  [ ! -r "$_creds_file" ] && return 0
+  [ ! -w "$_creds_file" ] && return 0
+
+  # Check if profile has static credentials
+  _has_static=0
+  _in_section=0
+  while IFS= read -r line; do
+    case "$line" in
+      "[$_target_profile]")
+        _in_section=1
+        ;;
+      "["*)
+        _in_section=0
+        ;;
+      *)
+        if [ "$_in_section" -eq 1 ]; then
+          case "$line" in
+            aws_access_key_id*|aws_secret_access_key*|aws_session_token*)
+              _has_static=1
+              break
+              ;;
+          esac
+        fi
+        ;;
+    esac
+  done < "$_creds_file"
+
+  [ "$_has_static" -eq 0 ] && return 0
+
+  # Create backup
+  cp "$_creds_file" "${_creds_file}.backup.$(date +%Y%m%d%H%M%S)" 2>/dev/null || true
+
+  # Comment out static credentials for this profile
+  _tmp_file="${_creds_file}.tmp.$$"
+  _in_section=0
+
+  while IFS= read -r line; do
+    case "$line" in
+      "[$_target_profile]")
+        _in_section=1
+        echo "$line"
+        ;;
+      "["*)
+        _in_section=0
+        echo "$line"
+        ;;
+      *)
+        if [ "$_in_section" -eq 1 ]; then
+          case "$line" in
+            aws_access_key_id*|aws_secret_access_key*|aws_session_token*)
+              # Check if already commented
+              case "$line" in
+                "#"*) echo "$line" ;;
+                *) echo "# $line" ;;
+              esac
+              ;;
+            *) echo "$line" ;;
+          esac
+        else
+          echo "$line"
+        fi
+        ;;
+    esac
+  done < "$_creds_file" > "$_tmp_file"
+
+  mv "$_tmp_file" "$_creds_file" 2>/dev/null || rm -f "$_tmp_file"
+}
+
+# Hook function to ensure env vars stay unset when using profile-based auth
+# This handles cases where hardcoded credentials are set in RC files after awsp loads
+_awsp_precmd_hook() {
+  # Only unset if we're using profile-based authentication
+  if [ -n "${AWS_PROFILE-}" ] && [ -z "${_AWSP_ALLOW_ENV_OVERRIDE-}" ]; then
+    # Check if env vars are set (which would override profile)
+    if [ -n "${AWS_ACCESS_KEY_ID-}" ] || [ -n "${AWS_SECRET_ACCESS_KEY-}" ]; then
+      unset AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY AWS_SESSION_TOKEN
+    fi
+  fi
+}
+
 # Auto-load saved profile on shell startup (silent)
 if [ -f "$HOME/.config/awsp/current_profile" ] && [ -z "${AWS_PROFILE-}" ]; then
   _awsp_saved_profile="$(cat "$HOME/.config/awsp/current_profile" 2>/dev/null || true)"
   if [ -n "$_awsp_saved_profile" ]; then
     # Unset static credentials to avoid conflicts with profile-based auth
     unset AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY AWS_SESSION_TOKEN
+    # Disable static credentials in credentials file
+    _awsp_disable_static_creds_startup "$_awsp_saved_profile"
     export AWS_SDK_LOAD_CONFIG=1
     export AWS_PROFILE="$_awsp_saved_profile"
     export AWS_DEFAULT_PROFILE="$_awsp_saved_profile"
   fi
   unset _awsp_saved_profile
+fi
+
+# Install prompt hook to keep env vars unset
+if [ -n "${ZSH_VERSION-}" ]; then
+  # Zsh: add to precmd_functions array
+  if ! (echo "${precmd_functions[@]-}" | grep -q "_awsp_precmd_hook" 2>/dev/null); then
+    precmd_functions+=(_awsp_precmd_hook)
+  fi
+  # Also run immediately in case user runs commands before first prompt
+  _awsp_precmd_hook
+elif [ -n "${BASH_VERSION-}" ]; then
+  # Bash: append to PROMPT_COMMAND
+  case "${PROMPT_COMMAND-}" in
+    *_awsp_precmd_hook*) ;;
+    *) PROMPT_COMMAND="_awsp_precmd_hook${PROMPT_COMMAND:+; $PROMPT_COMMAND}" ;;
+  esac
+  # Also run immediately in case user runs commands before first prompt
+  _awsp_precmd_hook
 fi
 
 awsp() {
@@ -84,6 +235,136 @@ USG
     # Remove saved profile
     rm -f "$HOME/.config/awsp/current_profile" 2>/dev/null || true
     [ "$quiet" -eq 0 ] && echo "→ AWS env cleared"
+  }
+
+  _awsp_is_sso_profile_check() {
+    _check_profile="$1"
+    _config_file="$HOME/.aws/config"
+
+    [ ! -f "$_config_file" ] && return 1
+    [ ! -r "$_config_file" ] && return 1
+
+    # Look for profile section and check for SSO configuration
+    _in_section=0
+    _section_name=""
+    while IFS= read -r line; do
+      case "$line" in
+        "["*"]")
+          # Extract section name
+          _section_name="$(echo "$line" | sed 's/\[//;s/\]//')"
+          # Remove "profile " prefix if present
+          _section_name="$(echo "$_section_name" | sed 's/^profile[[:space:]]*//;s/^[[:space:]]*//;s/[[:space:]]*$//')"
+          if [ "$_section_name" = "$_check_profile" ]; then
+            _in_section=1
+          else
+            _in_section=0
+          fi
+          ;;
+        *)
+          if [ "$_in_section" -eq 1 ]; then
+            case "$line" in
+              sso_start_url*|sso_region*|sso_account_id*|sso_role_name*)
+                return 0
+                ;;
+            esac
+          fi
+          ;;
+      esac
+    done < "$_config_file"
+
+    return 1
+  }
+
+  _awsp_disable_static_creds() {
+    # Comment out static credentials in ~/.aws/credentials for given profile
+    # to prevent conflicts with SSO-based auth
+    _target_profile="$1"
+
+    # Only disable static credentials if this is an SSO profile
+    if ! _awsp_is_sso_profile_check "$_target_profile"; then
+      return 0
+    fi
+
+    _creds_file="$HOME/.aws/credentials"
+
+    [ ! -f "$_creds_file" ] && return 0
+    [ ! -r "$_creds_file" ] && return 0
+    [ ! -w "$_creds_file" ] && return 0
+
+    # Check if profile has static credentials
+    _has_static=0
+    _in_section=0
+    while IFS= read -r line; do
+      case "$line" in
+        "[$_target_profile]")
+          _in_section=1
+          ;;
+        "["*)
+          _in_section=0
+          ;;
+        *)
+          if [ "$_in_section" -eq 1 ]; then
+            case "$line" in
+              aws_access_key_id*|aws_secret_access_key*|aws_session_token*)
+                _has_static=1
+                break
+                ;;
+            esac
+          fi
+          ;;
+      esac
+    done < "$_creds_file"
+
+    [ "$_has_static" -eq 0 ] && return 0
+
+    # Create backup
+    cp "$_creds_file" "${_creds_file}.backup.$(date +%Y%m%d%H%M%S)" 2>/dev/null || true
+
+    # Comment out static credentials for this profile
+    _tmp_file="${_creds_file}.tmp.$$"
+    _in_section=0
+    _modified=0
+
+    while IFS= read -r line; do
+      case "$line" in
+        "[$_target_profile]")
+          _in_section=1
+          echo "$line"
+          ;;
+        "["*)
+          _in_section=0
+          echo "$line"
+          ;;
+        *)
+          if [ "$_in_section" -eq 1 ]; then
+            case "$line" in
+              aws_access_key_id*|aws_secret_access_key*|aws_session_token*)
+                # Check if already commented
+                case "$line" in
+                  "#"*) echo "$line" ;;
+                  *) echo "# $line"; _modified=1 ;;
+                esac
+                ;;
+              *) echo "$line" ;;
+            esac
+          else
+            echo "$line"
+          fi
+          ;;
+      esac
+    done < "$_creds_file" > "$_tmp_file"
+
+    if [ "$_modified" -eq 1 ]; then
+      mv "$_tmp_file" "$_creds_file" 2>/dev/null || {
+        rm -f "$_tmp_file"
+        return 1
+      }
+      [ "$quiet" -eq 0 ] && echo "→ Disabled static credentials in ~/.aws/credentials (backup created)"
+      return 0
+    else
+      rm -f "$_tmp_file"
+      return 0
+    fi
   }
 
   _awsp_detect_install_type() {
@@ -496,6 +777,9 @@ USG
   export AWS_PROFILE="$profile"
   export AWS_DEFAULT_PROFILE="$profile"
   [ "$quiet" -eq 0 ] && echo "→ Switched to $AWS_PROFILE"
+
+  # Disable static credentials in credentials file to prevent conflicts with SSO
+  _awsp_disable_static_creds "$profile"
 
   # Save profile for auto-load in future shells (silent)
   if mkdir -p "$HOME/.config/awsp" 2>/dev/null; then

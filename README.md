@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="awsp.png" alt="awsp - AWS profile switcher" width="200" />
+</p>
+
 # awsp — AWS profile switcher
 
 Tiny cross-shell function to switch AWS profiles (with SSO auto-login if needed).

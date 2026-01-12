@@ -535,23 +535,35 @@ USG
 
     echo "→ Backing up current installation..."
 
-    # Backup current installation
+    # Backup current installation (only essential files)
     _backup_dir="${_install_dir}.backup"
     rm -rf "$_backup_dir"
-    cp -a "$_install_dir" "$_backup_dir" || {
-      echo "Error: Failed to create backup" >&2
+    mkdir -p "$_backup_dir/completions" || {
+      echo "Error: Failed to create backup directory" >&2
       rm -rf "$_tmp_dir"
       return 1
     }
+
+    # Copy only essential files (avoid symlinks and extra files that could cause issues)
+    if [ -f "$_install_dir/awsp.sh" ]; then
+      cp -f "$_install_dir/awsp.sh" "$_backup_dir/awsp.sh" || {
+        echo "Error: Failed to backup awsp.sh" >&2
+        rm -rf "$_tmp_dir" "$_backup_dir"
+        return 1
+      }
+    fi
+
+    if [ -d "$_install_dir/completions" ]; then
+      cp -f "$_install_dir/completions/"* "$_backup_dir/completions/" 2>/dev/null || true
+    fi
 
     echo "→ Installing new version..."
 
     # Copy new files
     if ! cp -f "$_extracted_dir/bin/awsp.sh" "$_install_dir/awsp.sh"; then
       echo "Error: Failed to install awsp.sh, restoring backup..." >&2
-      rm -rf "$_install_dir"
-      mv "$_backup_dir" "$_install_dir"
-      rm -rf "$_tmp_dir"
+      cp -f "$_backup_dir/awsp.sh" "$_install_dir/awsp.sh" 2>/dev/null || true
+      rm -rf "$_tmp_dir" "$_backup_dir"
       return 1
     fi
 
@@ -573,9 +585,9 @@ USG
     if [ "$_new_version" != "$_target_version" ]; then
       echo "Error: Version mismatch after upgrade (expected $_target_version, got $_new_version)" >&2
       echo "Restoring backup..." >&2
-      rm -rf "$_install_dir"
-      mv "$_backup_dir" "$_install_dir"
-      rm -rf "$_tmp_dir"
+      cp -f "$_backup_dir/awsp.sh" "$_install_dir/awsp.sh" 2>/dev/null || true
+      cp -f "$_backup_dir/completions/"* "$_install_dir/completions/" 2>/dev/null || true
+      rm -rf "$_tmp_dir" "$_backup_dir"
       return 1
     fi
 

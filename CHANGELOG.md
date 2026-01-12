@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.4.1](https://github.com/duyluann/awsp/compare/v1.4.0...v1.4.1) (2026-01-12)
+
+
+### Bug Fixes
+
+* prevent upgrade from hanging during backup step ([#33](https://github.com/duyluann/awsp/issues/33)) ([04b45e3](https://github.com/duyluann/awsp/commit/04b45e3c3e960064859aec3f66ab306e9e206f18))
+
 # [1.4.0](https://github.com/duyluann/awsp/compare/v1.3.0...v1.4.0) (2026-01-12)
 
 

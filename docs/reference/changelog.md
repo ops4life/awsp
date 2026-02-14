@@ -35,7 +35,7 @@ This automatically detects your installation method (git clone or release downlo
 
 Releases are fully automated:
 
-1. Commits following [Conventional Commits](../user-guide/commit-conventions.md) are pushed to `main`
+1. Commits following [Conventional Commits](../guides/commit-conventions.md) are pushed to `main`
 2. semantic-release analyzes commit messages
 3. A new version is determined based on commit types
 4. `CHANGELOG.md` is updated

@@ -7,7 +7,7 @@ description: Version history for awsp
 
 The full changelog is automatically maintained by [semantic-release](https://semantic-release.gitbook.io/) and can be found in the repository:
 
-[View CHANGELOG.md on GitHub](https://github.com/username/github-repo-template/blob/main/CHANGELOG.md){ .md-button }
+[View CHANGELOG.md on GitHub](https://github.com/ops4life/awsp/blob/main/CHANGELOG.md){ .md-button }
 
 ## How Versions Work
 

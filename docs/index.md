@@ -6,7 +6,7 @@ description: awsp — Lightweight, cross-shell AWS profile switcher with SSO aut
 # awsp — AWS Profile Switcher
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/username/github-repo-template/main/awsp.png" alt="awsp logo" width="200" />
+  <img src="https://raw.githubusercontent.com/ops4life/awsp/main/awsp.png" alt="awsp logo" width="200" />
 </p>
 
 **awsp** is a lightweight, cross-shell AWS profile switcher with SSO auto-login support. It's implemented as a pure POSIX shell function and works in both Bash and Zsh without external dependencies like `fzf`.
@@ -50,6 +50,6 @@ Ready to get started? Head over to the [Quick Start](getting-started/quick-start
 
 ## Links
 
-- [Source Code](https://github.com/username/github-repo-template)
-- [Issue Tracker](https://github.com/username/github-repo-template/issues)
+- [Source Code](https://github.com/ops4life/awsp)
+- [Issue Tracker](https://github.com/ops4life/awsp/issues)
 - [Changelog](reference/changelog.md)

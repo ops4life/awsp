@@ -1,10 +1,10 @@
 site_name: awsp — AWS Profile Switcher
 site_description: Lightweight, cross-shell AWS profile switcher with SSO auto-login support
 site_author: duyluann
-site_url: https://username.github.io/github-repo-template/
+site_url: https://ops4life.github.io/awsp/
 
-repo_name: username/github-repo-template
-repo_url: https://github.com/username/github-repo-template
+repo_name: ops4life/awsp
+repo_url: https://github.com/ops4life/awsp
 edit_uri: edit/main/docs/
 
 copyright: Copyright &copy; 2024 - present duyluann
@@ -38,7 +38,8 @@ theme:
     - navigation.instant
     - navigation.tracking
     - navigation.tabs
-    - navigation.tabs.sticky
+    - navigation.sections
+    - navigation.expand
     - navigation.top
     - navigation.footer
     - search.suggest
@@ -52,7 +53,7 @@ theme:
 extra:
   social:
     - icon: fontawesome/brands/github
-      link: https://github.com/username/github-repo-template
+      link: https://github.com/ops4life/awsp
       name: GitHub Repository
   generator: false
 

@@ -4,7 +4,7 @@
 
 # awsp — AWS profile switcher
 
-[![Documentation](https://img.shields.io/badge/docs-mkdocs-blue.svg)](https://username.github.io/github-repo-template/)
+[![Documentation](https://img.shields.io/badge/docs-mkdocs-blue.svg)](https://ops4life.github.io/awsp/)
 
 Tiny cross-shell function to switch AWS profiles (with SSO auto-login if needed).
 

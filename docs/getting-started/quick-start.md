@@ -12,7 +12,7 @@ Get up and running with awsp in just a few steps.
 ### Clone and Install
 
 ```bash
-git clone https://github.com/username/github-repo-template.git
+git clone https://github.com/ops4life/awsp.git
 cd awsp
 
 make install

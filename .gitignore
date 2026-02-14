@@ -85,6 +85,9 @@ TODO.personal.md
 gitleaks-report.json
 gitleaks-report.txt
 
+# MkDocs build output
+site/
+
 # Pre-commit cache
 .pre-commit-cache/
 

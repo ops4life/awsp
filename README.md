@@ -4,6 +4,8 @@
 
 # awsp — AWS profile switcher
 
+[![Documentation](https://img.shields.io/badge/docs-mkdocs-blue.svg)](https://username.github.io/github-repo-template/)
+
 Tiny cross-shell function to switch AWS profiles (with SSO auto-login if needed).
 
 - Works in **Bash** and **Zsh**.

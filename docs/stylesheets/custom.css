@@ -1,0 +1,38 @@
+/* Custom styles for awsp documentation */
+
+/* Adjust header */
+.md-header {
+  font-weight: 500;
+}
+
+/* Style code blocks */
+.md-typeset code {
+  font-size: 0.85em;
+}
+
+/* Improve table readability */
+.md-typeset table:not([class]) th {
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* Style admonitions */
+.md-typeset .admonition {
+  border-radius: 4px;
+}
+
+/* Button styling */
+.md-typeset .md-button {
+  border-radius: 4px;
+  font-weight: 500;
+}
+
+/* Footer links */
+.md-footer-meta {
+  font-size: 0.75rem;
+}
+
+/* Navigation tabs */
+.md-tabs {
+  font-weight: 500;
+}

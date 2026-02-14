@@ -11,3 +11,12 @@ repos:
     hooks:
     -   id: gitleaks
         args: [--verbose]
+
+-   repo: local
+    hooks:
+    -   id: mkdocs-build
+        name: mkdocs build
+        entry: mkdocs build --strict
+        language: system
+        pass_filenames: false
+        files: (docs/|mkdocs\.yml)

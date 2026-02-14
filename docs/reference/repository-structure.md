@@ -42,7 +42,7 @@ description: Overview of the awsp repository file structure
 │   ├── getting-started/
 │   │   ├── quick-start.md
 │   │   └── usage.md
-│   ├── user-guide/
+│   ├── guides/
 │   │   ├── contributing.md
 │   │   ├── commit-conventions.md
 │   │   ├── security.md

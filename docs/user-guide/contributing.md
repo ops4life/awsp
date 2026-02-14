@@ -11,7 +11,7 @@ Thank you for your interest in contributing to awsp! This guide walks you throug
 
 ### 1. Fork the Repository
 
-Click the "Fork" button at the top right of the [repository page](https://github.com/username/github-repo-template).
+Click the "Fork" button at the top right of the [repository page](https://github.com/ops4life/awsp).
 
 ### 2. Clone Your Fork
 
@@ -23,7 +23,7 @@ cd awsp
 ### 3. Add Upstream Remote
 
 ```bash
-git remote add upstream https://github.com/username/github-repo-template.git
+git remote add upstream https://github.com/ops4life/awsp.git
 ```
 
 ## Development Setup
@@ -132,6 +132,6 @@ The function uses `emulate -L sh` for Zsh users, ensuring POSIX-like behavior. T
 
 ## Questions?
 
-- **Questions**: Open a [Discussion](https://github.com/username/github-repo-template/discussions)
-- **Bug Reports**: Open an [Issue](https://github.com/username/github-repo-template/issues/new?template=bug_report.md)
-- **Feature Requests**: Open an [Issue](https://github.com/username/github-repo-template/issues/new?template=feature_request.md)
+- **Questions**: Open a [Discussion](https://github.com/ops4life/awsp/discussions)
+- **Bug Reports**: Open an [Issue](https://github.com/ops4life/awsp/issues/new?template=bug_report.md)
+- **Feature Requests**: Open an [Issue](https://github.com/ops4life/awsp/issues/new?template=feature_request.md)

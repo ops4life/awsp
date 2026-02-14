@@ -8,3 +8,6 @@ LICENSE
 README.md
 .github/workflows/release.yaml
 .releaserc.json
+mkdocs.yml
+requirements.txt
+docs/

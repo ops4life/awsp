@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.5.1](https://github.com/ops4life/awsp/compare/v1.5.0...v1.5.1) (2026-08-18)
+
+
+### Bug Fixes
+
+* point upgrade check and clone URLs to ops4life/awsp ([#33](https://github.com/ops4life/awsp/issues/33)) ([ffcdea8](https://github.com/ops4life/awsp/commit/ffcdea8d09c6afb41c765100d923c3e7fcbd18fd))
+
 # [1.5.0](https://github.com/ops4life/awsp/compare/v1.4.1...v1.5.0) (2026-08-18)
 
 

@@ -21,6 +21,10 @@ _awsp() {
     '--upgrade[upgrade awsp]' \
     '-a[add a new profile]' \
     '--add[add a new profile]' \
+    '-r[remove a profile]' \
+    '--remove[remove a profile]' \
+    '-m[modify an existing profile]' \
+    '--modify[modify an existing profile]' \
     '-L[force sso login]' \
     '--login[force sso login]' \
     '-v[verify via STS]' \

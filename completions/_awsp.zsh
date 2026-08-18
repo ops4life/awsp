@@ -19,6 +19,8 @@ _awsp() {
     '--unset[unset env]' \
     '-U[upgrade awsp]' \
     '--upgrade[upgrade awsp]' \
+    '-a[add a new profile]' \
+    '--add[add a new profile]' \
     '-L[force sso login]' \
     '--login[force sso login]' \
     '-v[verify via STS]' \

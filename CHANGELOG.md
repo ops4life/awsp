@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+# [1.5.0](https://github.com/ops4life/awsp/compare/v1.4.1...v1.5.0) (2026-08-18)
+
+
+### Features
+
+* add -a/--add flag to create new profiles without editing config files ([#32](https://github.com/ops4life/awsp/issues/32)) ([74106bd](https://github.com/ops4life/awsp/commit/74106bdb4cbefb17cd92bdeea33a01f08391304d))
+
 ## [1.4.1](https://github.com/duyluann/awsp/compare/v1.4.0...v1.4.1) (2026-01-12)
 
 

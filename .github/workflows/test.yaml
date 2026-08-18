@@ -1,0 +1,55 @@
+name: Test
+
+on:
+  pull_request:
+    branches: [ main, master ]
+  push:
+    branches: [ main, master ]
+
+permissions:
+  contents: read
+
+jobs:
+  bats:
+    name: bats
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v7
+
+      - name: Set up bats
+        uses: bats-core/bats-action@3.0.1
+
+      - name: Run test suite
+        run: |
+          set -o pipefail
+          bats --formatter tap tests/awsp.bats | tee bats-output.tap
+
+      - name: Publish test report to job summary
+        if: always()
+        run: |
+          total=$(grep -c '^\(ok\|not ok\) ' bats-output.tap || true)
+          passed=$(grep -c '^ok ' bats-output.tap || true)
+          failed=$(grep -c '^not ok ' bats-output.tap || true)
+
+          {
+            echo "## awsp test results"
+            echo ""
+            if [ "$failed" -eq 0 ]; then
+              echo "✅ **${passed}/${total} tests passed**"
+            else
+              echo "❌ **${failed}/${total} tests failed** (${passed} passed)"
+              echo ""
+              echo "### Failures"
+              echo '```'
+              grep '^not ok ' bats-output.tap
+              echo '```'
+            fi
+            echo ""
+            echo "<details><summary>Full TAP output</summary>"
+            echo ""
+            echo '```'
+            cat bats-output.tap
+            echo '```'
+            echo "</details>"
+          } >> "$GITHUB_STEP_SUMMARY"

@@ -178,6 +178,7 @@ awsp() {
   force_login=0
   unset_only=0
   upgrade=0
+  add_profile=0
   verify=auto        # auto|on|off
   quiet=0
   outfmt=table       # table|json
@@ -197,6 +198,7 @@ Options:
   -c, --current      Print current AWS profile and exit
   -u, --unset        Unset AWS profile & static creds and exit
   -U, --upgrade      Upgrade awsp to latest version
+  -a, --add          Add a new profile (SSO or static credentials) and switch to it
   -L, --login        Force "aws sso login" for the selected/current profile
   -v, --verify       Verify identity via STS (default: auto)
       --no-verify    Do not verify identity
@@ -214,6 +216,7 @@ USG
       -c|--current) show_current=1 ;;
       -u|--unset) unset_only=1 ;;
       -U|--upgrade) upgrade=1 ;;
+      -a|--add) add_profile=1 ;;
       -L|--login) force_login=1 ;;
       -v|--verify) verify=on ;;
       --no-verify) verify=off ;;
@@ -234,7 +237,7 @@ USG
     unset AWS_PROFILE AWS_DEFAULT_PROFILE
     # Remove saved profile
     rm -f "$HOME/.config/awsp/current_profile" 2>/dev/null || true
-    [ "$quiet" -eq 0 ] && echo "→ AWS env cleared"
+    if [ "$quiet" -eq 0 ]; then echo "→ AWS env cleared"; fi
   }
 
   _awsp_is_sso_profile_check() {
@@ -735,6 +738,44 @@ USG
     return $?
   fi
 
+  if [ "$add_profile" -eq 1 ]; then
+    if ! command -v aws >/dev/null 2>&1; then
+      echo "awsp: aws CLI is required to add a profile" >&2
+      return 1
+    fi
+
+    printf 'New profile name: '
+    read -r new_profile_name
+    while [ -z "$new_profile_name" ]; do
+      printf 'Profile name cannot be empty. New profile name: '
+      read -r new_profile_name
+    done
+
+    printf 'Profile type: [1] SSO (recommended)  [2] Static credentials\nSelect: '
+    read -r new_profile_type
+    case "$new_profile_type" in
+      1)
+        printf 'SSO login method: [1] Open browser (recommended)  [2] Device code (no browser access)\nSelect: '
+        read -r new_profile_sso_method
+        case "$new_profile_sso_method" in
+          2) aws configure sso --profile "$new_profile_name" --use-device-code || return 1 ;;
+          *) aws configure sso --profile "$new_profile_name" || return 1 ;;
+        esac
+        unset new_profile_sso_method
+        ;;
+      2)
+        aws configure --profile "$new_profile_name" || return 1
+        ;;
+      *)
+        echo "awsp: invalid selection" >&2
+        return 1
+        ;;
+    esac
+
+    profile="$new_profile_name"
+    unset new_profile_name new_profile_type
+  fi
+
   has_aws=0
   profiles=""
 
@@ -746,15 +787,21 @@ USG
 
   if [ -z "$profiles" ]; then
     cfg=""
-    [ -r "$HOME/.aws/config" ] && \
+    if [ -r "$HOME/.aws/config" ]; then
       cfg="$(awk '/^\[/{gsub(/\[|\]/,""); n=$0; sub(/^profile[[:space:]]+/,"",n); print n}' "$HOME/.aws/config")"
+    fi
     cred=""
-    [ -r "$HOME/.aws/credentials" ] && \
+    if [ -r "$HOME/.aws/credentials" ]; then
       cred="$(awk '/^\[/{gsub(/\[|\]/,""); print}' "$HOME/.aws/credentials")"
+    fi
     profiles="$(printf '%s\n%s\n' "$cfg" "$cred" | awk 'NF' | sort -u)"
   fi
 
-  count=$(printf '%s\n' "$profiles" | awk 'END{print NR+0}')
+  if [ -z "$profiles" ]; then
+    count=0
+  else
+    count=$(printf '%s\n' "$profiles" | awk 'END{print NR+0}')
+  fi
   if [ "$count" -eq 0 ]; then
     echo "No AWS profiles found. Create one with: aws configure sso"
     return 1
@@ -767,7 +814,7 @@ USG
 
   # ---------- choose profile if not provided (numbered list) ----------
   if [ -z "$profile" ]; then
-    [ "$quiet" -eq 0 ] && echo "Pick an AWS profile:"
+    if [ "$quiet" -eq 0 ]; then echo "Pick an AWS profile:"; fi
     printf '%s\n' "$profiles" | nl -w2 -s') '
     printf 'Select number: '
     read -r choice
@@ -781,14 +828,14 @@ USG
     fi
   fi
 
-  [ -z "$profile" ] && { echo "No selection."; return 1; }
+  if [ -z "$profile" ]; then echo "No selection."; return 1; fi
 
   # ---------- set env (avoid static creds override) ----------
   _awsp_unset
   export AWS_SDK_LOAD_CONFIG=1
   export AWS_PROFILE="$profile"
   export AWS_DEFAULT_PROFILE="$profile"
-  [ "$quiet" -eq 0 ] && echo "→ Switched to $AWS_PROFILE"
+  if [ "$quiet" -eq 0 ]; then echo "→ Switched to $AWS_PROFILE"; fi
 
   # Disable static credentials in credentials file to prevent conflicts with SSO
   _awsp_disable_static_creds "$profile"
@@ -808,13 +855,13 @@ USG
     esac
 
     if [ "$force_login" -eq 1 ]; then
-      [ "$quiet" -eq 0 ] && echo "Authenticating SSO for $AWS_PROFILE..."
+      if [ "$quiet" -eq 0 ]; then echo "Authenticating SSO for $AWS_PROFILE..."; fi
       aws sso login --profile "$AWS_PROFILE" >/dev/null 2>&1 || { echo "SSO login failed."; return 1; }
     fi
 
     if [ "$do_verify" -eq 1 ]; then
       if ! aws sts get-caller-identity >/dev/null 2>&1; then
-        [ "$quiet" -eq 0 ] && echo "Authenticating SSO for $AWS_PROFILE..."
+        if [ "$quiet" -eq 0 ]; then echo "Authenticating SSO for $AWS_PROFILE..."; fi
         aws sso login --profile "$AWS_PROFILE" >/dev/null 2>&1 || { echo "SSO login failed."; return 1; }
       fi
       if [ "$outfmt" = "json" ]; then
@@ -824,7 +871,7 @@ USG
       fi
     fi
   else
-    [ "$quiet" -eq 0 ] && echo "Note: aws CLI not found in PATH; env switched but cannot verify."
+    if [ "$quiet" -eq 0 ]; then echo "Note: aws CLI not found in PATH; env switched but cannot verify."; fi
   fi
 }
 

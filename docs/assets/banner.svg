@@ -1,0 +1,119 @@
+<svg width="800" height="200" viewBox="0 0 800 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg_grad" x1="0" y1="0" x2="800" y2="200" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#090A0F"/>
+      <stop offset="1" stop-color="#181A20"/>
+    </linearGradient>
+    
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="3" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+    <filter id="glow-strong" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="5" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+    
+    <!-- Isometric Cube Template -->
+    <g id="iso-cube">
+      <path d="M 0 10 L -17 0 L -17 -20 L 0 -10 Z" fill="#ffffff" fill-opacity="0.08" stroke="#ffffff" stroke-width="1.2" stroke-linejoin="round"/>
+      <path d="M 0 10 L 17 0 L 17 -20 L 0 -10 Z" fill="#ffffff" fill-opacity="0.15" stroke="#ffffff" stroke-width="1.2" stroke-linejoin="round"/>
+      <path d="M 0 -10 L -17 -20 L 0 -30 L 17 -20 Z" fill="#ffffff" fill-opacity="0.22" stroke="#ffffff" stroke-width="1.2" stroke-linejoin="round"/>
+    </g>
+  </defs>
+
+  <rect width="800" height="200" rx="12" fill="url(#bg_grad)" stroke="#ffffff" stroke-opacity="0.08" stroke-width="1"/>
+
+  <!-- High Contrast Background Grid -->
+  <g opacity="0.6">
+    <path d="M0 40H800M0 80H800M0 120H800M0 160H800M40 0V200M80 0V200M120 0V200M160 0V200 M200 0V200 M240 0V200 M280 0V200 M320 0V200 M360 0V200 M400 0V200 M440 0V200 M480 0V200 M520 0V200 M560 0V200 M600 0V200 M640 0V200 M680 0V200 M720 0V200 M760 0V200" stroke="white" stroke-opacity="0.08" stroke-width="1"/>
+    
+    <!-- Moving Glow Accents -->
+    <path d="M 0 80 H 800" stroke="#C0FF00" stroke-width="1.5" stroke-dasharray="40 360" opacity="0.8" filter="url(#glow)">
+      <animate attributeName="stroke-dashoffset" from="400" to="0" dur="4s" repeatCount="indefinite" />
+    </path>
+    <path d="M 0 160 H 800" stroke="#FF9900" stroke-width="1.5" stroke-dasharray="60 440" opacity="0.8" filter="url(#glow)">
+      <animate attributeName="stroke-dashoffset" from="0" to="-500" dur="6s" repeatCount="indefinite" />
+    </path>
+  </g>
+
+  <!-- Clear, High-Contrast Terminal Output Snippet -->
+  <g font-family="Consolas, Monaco, 'Courier New', monospace" font-size="11.5" font-weight="600" fill="#E2E8F0">
+    <rect x="425" y="22" width="225" height="156" rx="6" fill="#0B0E14" fill-opacity="0.75" stroke="#ffffff" stroke-opacity="0.12" stroke-width="1" />
+    
+    <text x="440" y="44" fill="#C0FF00">$ awsp prod-admin</text>
+    <text x="440" y="64" fill="#38BDF8">✔ AWS_PROFILE=prod-admin</text>
+    <text x="440" y="82" fill="#94A3B8">✔ SSO active (us-east-1)</text>
+    <text x="440" y="100" fill="#94A3B8">✔ AdministratorAccess</text>
+    <text x="440" y="124" fill="#C0FF00">$ aws sts get-caller-id</text>
+    <text x="440" y="144" fill="#FF9900">✔ Account: 123456789012</text>
+    <text x="440" y="162" fill="#4ADE80">✔ Status: Authenticated ⚡</text>
+  </g>
+
+  <!-- Distant Floating Cubes -->
+  <g opacity="0.35">
+    <g transform="translate(385, 45) scale(0.6)">
+      <use href="#iso-cube" />
+    </g>
+    <g transform="translate(390, 165) scale(0.5)">
+      <use href="#iso-cube" />
+    </g>
+  </g>
+
+  <!-- Typography with Sharp Contrast -->
+  <g transform="translate(48, 0)">
+    <text x="0" y="55" fill="#C0FF00" font-family="Arial, sans-serif" font-size="12" font-weight="800" letter-spacing="3" filter="url(#glow)">OPS4LIFE TOOLING</text>
+    <text x="0" y="110" fill="#FFFFFF" font-family="Arial, sans-serif" font-size="48" font-weight="900" letter-spacing="-0.5">awsp</text>
+    <text x="0" y="145" fill="#CBD5E1" font-family="Arial, sans-serif" font-size="17" font-weight="600">AWS Profile Switcher &amp; SSO Login Helper</text>
+    
+    <rect x="0" y="163" width="90" height="4" rx="2" fill="#C0FF00" filter="url(#glow)"/>
+    <rect x="0" y="163" width="90" height="4" rx="2" fill="#ffffff" opacity="0.9">
+      <animate attributeName="width" values="0; 90; 0" dur="5s" repeatCount="indefinite" />
+      <animate attributeName="opacity" values="0.9; 0; 0.9" dur="5s" repeatCount="indefinite" />
+    </rect>
+  </g>
+
+  <!-- High-Visibility Centerpiece Logo Group -->
+  <g transform="translate(715, 100) scale(1.45)">
+    <!-- Base aura ring -->
+    <circle cx="0" cy="0" r="44" fill="#0D1117" stroke="#C0FF00" stroke-opacity="0.3" stroke-width="1.5" filter="url(#glow)"/>
+    
+    <!-- Floating Isometric Stack -->
+    <g>
+      <animateTransform attributeName="transform" type="translate" values="0,2; 0,-2; 0,2" dur="4s" repeatCount="indefinite" />
+      
+      <!-- Bottom Cube -->
+      <g transform="translate(0, 16)">
+        <use href="#iso-cube" />
+      </g>
+      
+      <!-- Middle Cube (AWS Orange) -->
+      <g transform="translate(0, -2)">
+        <path d="M 0 10 L -17 0 L -17 -20 L 0 -10 Z" fill="#FF9900" fill-opacity="0.45" stroke="#FF9900" stroke-width="1.4" stroke-linejoin="round" filter="url(#glow)"/>
+        <path d="M 0 10 L 17 0 L 17 -20 L 0 -10 Z" fill="#FF9900" fill-opacity="0.6" stroke="#FF9900" stroke-width="1.4" stroke-linejoin="round" filter="url(#glow)"/>
+        <path d="M 0 -10 L -17 -20 L 0 -30 L 17 -20 Z" fill="#FF9900" fill-opacity="0.75" stroke="#FF9900" stroke-width="1.4" stroke-linejoin="round"/>
+      </g>
+      
+      <!-- Top Cube (ops4life Lime Green) -->
+      <g transform="translate(0, -20)">
+        <path d="M 0 10 L -17 0 L -17 -20 L 0 -10 Z" fill="#C0FF00" fill-opacity="0.5" stroke="#C0FF00" stroke-width="1.4" stroke-linejoin="round" filter="url(#glow)"/>
+        <path d="M 0 10 L 17 0 L 17 -20 L 0 -10 Z" fill="#C0FF00" fill-opacity="0.65" stroke="#C0FF00" stroke-width="1.4" stroke-linejoin="round" filter="url(#glow)"/>
+        <path d="M 0 -10 L -17 -20 L 0 -30 L 17 -20 Z" fill="#C0FF00" fill-opacity="0.85" stroke="#C0FF00" stroke-width="1.4" stroke-linejoin="round"/>
+        
+        <circle cx="0" cy="-35" r="3.5" fill="#C0FF00" filter="url(#glow-strong)">
+          <animateTransform attributeName="transform" type="translate" values="0,0; 0,-4; 0,0" dur="2s" repeatCount="indefinite" />
+        </circle>
+      </g>
+    </g>
+    
+    <!-- 3D Orbiting Ring -->
+    <g transform="scale(1, 0.38)">
+      <ellipse cx="0" cy="0" rx="36" ry="36" fill="none" stroke="#ffffff" stroke-opacity="0.2" stroke-width="1.5"/>
+      <g>
+        <animateTransform attributeName="transform" type="rotate" values="0; 360" dur="7s" repeatCount="indefinite" />
+        <circle cx="36" cy="0" r="3.5" fill="#C0FF00" filter="url(#glow-strong)" />
+        <circle cx="-36" cy="0" r="3.5" fill="#FF9900" filter="url(#glow-strong)" />
+      </g>
+    </g>
+  </g>
+</svg>

@@ -179,6 +179,8 @@ awsp() {
   unset_only=0
   upgrade=0
   add_profile=0
+  remove_profile=0
+  modify_profile=0
   verify=auto        # auto|on|off
   quiet=0
   outfmt=table       # table|json
@@ -199,6 +201,8 @@ Options:
   -u, --unset        Unset AWS profile & static creds and exit
   -U, --upgrade      Upgrade awsp to latest version
   -a, --add          Add a new profile (SSO or static credentials) and switch to it
+  -r, --remove       Remove a profile (prompts for selection if omitted)
+  -m, --modify       Modify/reconfigure an existing profile (prompts if omitted)
   -L, --login        Force "aws sso login" for the selected/current profile
   -v, --verify       Verify identity via STS (default: auto)
       --no-verify    Do not verify identity
@@ -217,6 +221,8 @@ USG
       -u|--unset) unset_only=1 ;;
       -U|--upgrade) upgrade=1 ;;
       -a|--add) add_profile=1 ;;
+      -r|--remove) remove_profile=1 ;;
+      -m|--modify) modify_profile=1 ;;
       -L|--login) force_login=1 ;;
       -v|--verify) verify=on ;;
       --no-verify) verify=off ;;
@@ -738,6 +744,54 @@ USG
     return $?
   fi
 
+  # ---------- collect profiles (needed by add/remove/modify pickers too) ----------
+  has_aws=0
+  profiles=""
+
+  if command -v aws >/dev/null 2>&1; then
+    has_aws=1
+    profiles="$(aws configure list-profiles 2>/dev/null | awk 'NF')"
+  fi
+
+  if [ -z "$profiles" ]; then
+    cfg=""
+    if [ -r "$HOME/.aws/config" ]; then
+      cfg="$(awk '/^\[/{gsub(/\[|\]/,""); n=$0; sub(/^profile[[:space:]]+/,"",n); print n}' "$HOME/.aws/config")"
+    fi
+    cred=""
+    if [ -r "$HOME/.aws/credentials" ]; then
+      cred="$(awk '/^\[/{gsub(/\[|\]/,""); print}' "$HOME/.aws/credentials")"
+    fi
+    profiles="$(printf '%s\n%s\n' "$cfg" "$cred" | awk 'NF' | sort -u)"
+  fi
+
+  if [ -z "$profiles" ]; then
+    count=0
+  else
+    count=$(printf '%s\n' "$profiles" | awk 'END{print NR+0}')
+  fi
+
+  # Pick a profile from the numbered list; sets $_picked or returns 1
+  _awsp_pick_profile() {
+    if [ "$count" -eq 0 ]; then
+      echo "No AWS profiles found." >&2
+      return 1
+    fi
+    echo "Pick an AWS profile:"
+    printf '%s\n' "$profiles" | nl -w2 -s') '
+    printf 'Select number: '
+    read -r _pick_choice
+    case "$_pick_choice" in
+      ''|*[!0-9]*) echo "No selection." >&2; return 1 ;;
+    esac
+    if [ "$_pick_choice" -ge 1 ] && [ "$_pick_choice" -le "$count" ]; then
+      _picked="$(printf '%s\n' "$profiles" | sed -n "${_pick_choice}p")"
+      return 0
+    fi
+    echo "No selection." >&2
+    return 1
+  }
+
   if [ "$add_profile" -eq 1 ]; then
     if ! command -v aws >/dev/null 2>&1; then
       echo "awsp: aws CLI is required to add a profile" >&2
@@ -776,33 +830,105 @@ USG
     unset new_profile_name new_profile_type
   fi
 
-  has_aws=0
-  profiles=""
-
-  # ---------- collect profiles ----------
-  if command -v aws >/dev/null 2>&1; then
-    has_aws=1
-    profiles="$(aws configure list-profiles 2>/dev/null | awk 'NF')"
-  fi
-
-  if [ -z "$profiles" ]; then
-    cfg=""
-    if [ -r "$HOME/.aws/config" ]; then
-      cfg="$(awk '/^\[/{gsub(/\[|\]/,""); n=$0; sub(/^profile[[:space:]]+/,"",n); print n}' "$HOME/.aws/config")"
+  if [ "$remove_profile" -eq 1 ]; then
+    if [ -z "$profile" ]; then
+      _awsp_pick_profile || return 1
+      profile="$_picked"
     fi
-    cred=""
-    if [ -r "$HOME/.aws/credentials" ]; then
-      cred="$(awk '/^\[/{gsub(/\[|\]/,""); print}' "$HOME/.aws/credentials")"
+
+    printf 'Remove profile "%s"? This deletes it from ~/.aws/config and ~/.aws/credentials (y/N): ' "$profile"
+    read -r _rm_confirm
+    case "$_rm_confirm" in
+      y|Y|yes|YES) ;;
+      *) echo "Removal cancelled."; return 1 ;;
+    esac
+
+    _cfg_file="$HOME/.aws/config"
+    _creds_file="$HOME/.aws/credentials"
+
+    if [ -f "$_cfg_file" ] && [ -w "$_cfg_file" ]; then
+      cp "$_cfg_file" "${_cfg_file}.backup.$(date +%Y%m%d%H%M%S)" 2>/dev/null || true
+      _tmp_file="${_cfg_file}.tmp.$$"
+      _in_section=0
+      while IFS= read -r line; do
+        case "$line" in
+          "["*"]")
+            _section_name="$(echo "$line" | sed 's/\[//;s/\]//;s/^profile[[:space:]]*//;s/^[[:space:]]*//;s/[[:space:]]*$//')"
+            if [ "$_section_name" = "$profile" ]; then
+              _in_section=1
+            else
+              _in_section=0
+              echo "$line"
+            fi
+            ;;
+          *)
+            [ "$_in_section" -eq 0 ] && echo "$line"
+            ;;
+        esac
+      done < "$_cfg_file" > "$_tmp_file"
+      mv "$_tmp_file" "$_cfg_file" 2>/dev/null || rm -f "$_tmp_file"
     fi
-    profiles="$(printf '%s\n%s\n' "$cfg" "$cred" | awk 'NF' | sort -u)"
+
+    if [ -f "$_creds_file" ] && [ -w "$_creds_file" ]; then
+      cp "$_creds_file" "${_creds_file}.backup.$(date +%Y%m%d%H%M%S)" 2>/dev/null || true
+      _tmp_file="${_creds_file}.tmp.$$"
+      _in_section=0
+      while IFS= read -r line; do
+        case "$line" in
+          "[$profile]")
+            _in_section=1
+            ;;
+          "["*)
+            _in_section=0
+            echo "$line"
+            ;;
+          *)
+            [ "$_in_section" -eq 0 ] && echo "$line"
+            ;;
+        esac
+      done < "$_creds_file" > "$_tmp_file"
+      mv "$_tmp_file" "$_creds_file" 2>/dev/null || rm -f "$_tmp_file"
+    fi
+
+    if [ "${AWS_PROFILE-}" = "$profile" ]; then
+      _awsp_unset
+    fi
+    if [ "$(cat "$HOME/.config/awsp/current_profile" 2>/dev/null || true)" = "$profile" ]; then
+      rm -f "$HOME/.config/awsp/current_profile" 2>/dev/null || true
+    fi
+
+    echo "→ Removed profile \"$profile\" (backups created)"
+    return 0
   fi
 
-  if [ -z "$profiles" ]; then
-    count=0
-  else
-    count=$(printf '%s\n' "$profiles" | awk 'END{print NR+0}')
+  if [ "$modify_profile" -eq 1 ]; then
+    if ! command -v aws >/dev/null 2>&1; then
+      echo "awsp: aws CLI is required to modify a profile" >&2
+      return 1
+    fi
+
+    if [ -z "$profile" ]; then
+      _awsp_pick_profile || return 1
+      profile="$_picked"
+    fi
+
+    if _awsp_is_sso_profile_check "$profile"; then
+      printf 'SSO login method: [1] Open browser (recommended)  [2] Device code (no browser access)\nSelect: '
+      read -r _mod_sso_method
+      case "$_mod_sso_method" in
+        2) aws configure sso --profile "$profile" --use-device-code || return 1 ;;
+        *) aws configure sso --profile "$profile" || return 1 ;;
+      esac
+      unset _mod_sso_method
+    else
+      aws configure --profile "$profile" || return 1
+    fi
+
+    echo "→ Updated profile \"$profile\""
+    return 0
   fi
-  if [ "$count" -eq 0 ]; then
+
+  if [ "$count" -eq 0 ] && [ "$add_profile" -eq 0 ]; then
     echo "No AWS profiles found. Create one with: aws configure sso"
     return 1
   fi

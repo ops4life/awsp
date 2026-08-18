@@ -1,0 +1,71 @@
+#!/usr/bin/env bash
+# Mock AWS CLI for bats tests.
+#
+# Controlled via env vars:
+#   MOCK_AWS_LOG               - if set, append every invocation to this file
+#   MOCK_AWS_PROFILES          - newline-separated profiles for "configure list-profiles"
+#   MOCK_AWS_STS_FAIL          - "1" makes "sts get-caller-identity" fail
+#   MOCK_AWS_SSO_LOGIN_EXIT    - exit code for "sso login" (default 0)
+#   MOCK_AWS_CONFIGURE_EXIT    - exit code for "configure sso" / "configure" (default 0)
+
+if [ -n "${MOCK_AWS_LOG-}" ]; then
+  printf '%s\n' "$*" >> "$MOCK_AWS_LOG"
+fi
+
+_mock_profile_arg() {
+  _p=""
+  _prev=""
+  for _a in "$@"; do
+    [ "$_prev" = "--profile" ] && _p="$_a"
+    _prev="$_a"
+  done
+  printf '%s' "$_p"
+}
+
+case "$1" in
+  configure)
+    case "$2" in
+      list-profiles)
+        [ -n "${MOCK_AWS_PROFILES-}" ] && printf '%s\n' "$MOCK_AWS_PROFILES"
+        exit 0
+        ;;
+      sso)
+        profile="$(_mock_profile_arg "$@")"
+        {
+          echo "[profile $profile]"
+          echo "sso_start_url = https://example.awsapps.com/start"
+          echo "sso_region = us-east-1"
+          echo "sso_account_id = 123456789012"
+          echo "sso_role_name = Admin"
+        } >> "$HOME/.aws/config"
+        exit "${MOCK_AWS_CONFIGURE_EXIT:-0}"
+        ;;
+      *)
+        profile="$(_mock_profile_arg "$@")"
+        {
+          echo "[$profile]"
+          echo "aws_access_key_id = AKIAFAKE"
+          echo "aws_secret_access_key = fakesecret"
+        } >> "$HOME/.aws/credentials"
+        exit "${MOCK_AWS_CONFIGURE_EXIT:-0}"
+        ;;
+    esac
+    ;;
+  sts)
+    if [ "${MOCK_AWS_STS_FAIL-}" = "1" ] && [ ! -f "${HOME}/.mock-sso-logged-in" ]; then
+      exit 1
+    fi
+    if printf '%s\n' "$*" | grep -q -- '--output json'; then
+      echo '{"Account":"123456789012"}'
+    else
+      echo '||  Account  ||'
+    fi
+    exit 0
+    ;;
+  sso)
+    _exit="${MOCK_AWS_SSO_LOGIN_EXIT:-0}"
+    [ "$_exit" -eq 0 ] && touch "${HOME}/.mock-sso-logged-in"
+    exit "$_exit"
+    ;;
+esac
+exit 0

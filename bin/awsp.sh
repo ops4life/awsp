@@ -237,7 +237,7 @@ USG
     unset AWS_PROFILE AWS_DEFAULT_PROFILE
     # Remove saved profile
     rm -f "$HOME/.config/awsp/current_profile" 2>/dev/null || true
-    [ "$quiet" -eq 0 ] && echo "→ AWS env cleared"
+    if [ "$quiet" -eq 0 ]; then echo "→ AWS env cleared"; fi
   }
 
   _awsp_is_sso_profile_check() {
@@ -787,15 +787,21 @@ USG
 
   if [ -z "$profiles" ]; then
     cfg=""
-    [ -r "$HOME/.aws/config" ] && \
+    if [ -r "$HOME/.aws/config" ]; then
       cfg="$(awk '/^\[/{gsub(/\[|\]/,""); n=$0; sub(/^profile[[:space:]]+/,"",n); print n}' "$HOME/.aws/config")"
+    fi
     cred=""
-    [ -r "$HOME/.aws/credentials" ] && \
+    if [ -r "$HOME/.aws/credentials" ]; then
       cred="$(awk '/^\[/{gsub(/\[|\]/,""); print}' "$HOME/.aws/credentials")"
+    fi
     profiles="$(printf '%s\n%s\n' "$cfg" "$cred" | awk 'NF' | sort -u)"
   fi
 
-  count=$(printf '%s\n' "$profiles" | awk 'END{print NR+0}')
+  if [ -z "$profiles" ]; then
+    count=0
+  else
+    count=$(printf '%s\n' "$profiles" | awk 'END{print NR+0}')
+  fi
   if [ "$count" -eq 0 ]; then
     echo "No AWS profiles found. Create one with: aws configure sso"
     return 1
@@ -808,7 +814,7 @@ USG
 
   # ---------- choose profile if not provided (numbered list) ----------
   if [ -z "$profile" ]; then
-    [ "$quiet" -eq 0 ] && echo "Pick an AWS profile:"
+    if [ "$quiet" -eq 0 ]; then echo "Pick an AWS profile:"; fi
     printf '%s\n' "$profiles" | nl -w2 -s') '
     printf 'Select number: '
     read -r choice
@@ -822,14 +828,14 @@ USG
     fi
   fi
 
-  [ -z "$profile" ] && { echo "No selection."; return 1; }
+  if [ -z "$profile" ]; then echo "No selection."; return 1; fi
 
   # ---------- set env (avoid static creds override) ----------
   _awsp_unset
   export AWS_SDK_LOAD_CONFIG=1
   export AWS_PROFILE="$profile"
   export AWS_DEFAULT_PROFILE="$profile"
-  [ "$quiet" -eq 0 ] && echo "→ Switched to $AWS_PROFILE"
+  if [ "$quiet" -eq 0 ]; then echo "→ Switched to $AWS_PROFILE"; fi
 
   # Disable static credentials in credentials file to prevent conflicts with SSO
   _awsp_disable_static_creds "$profile"
@@ -849,13 +855,13 @@ USG
     esac
 
     if [ "$force_login" -eq 1 ]; then
-      [ "$quiet" -eq 0 ] && echo "Authenticating SSO for $AWS_PROFILE..."
+      if [ "$quiet" -eq 0 ]; then echo "Authenticating SSO for $AWS_PROFILE..."; fi
       aws sso login --profile "$AWS_PROFILE" >/dev/null 2>&1 || { echo "SSO login failed."; return 1; }
     fi
 
     if [ "$do_verify" -eq 1 ]; then
       if ! aws sts get-caller-identity >/dev/null 2>&1; then
-        [ "$quiet" -eq 0 ] && echo "Authenticating SSO for $AWS_PROFILE..."
+        if [ "$quiet" -eq 0 ]; then echo "Authenticating SSO for $AWS_PROFILE..."; fi
         aws sso login --profile "$AWS_PROFILE" >/dev/null 2>&1 || { echo "SSO login failed."; return 1; }
       fi
       if [ "$outfmt" = "json" ]; then
@@ -865,7 +871,7 @@ USG
       fi
     fi
   else
-    [ "$quiet" -eq 0 ] && echo "Note: aws CLI not found in PATH; env switched but cannot verify."
+    if [ "$quiet" -eq 0 ]; then echo "Note: aws CLI not found in PATH; env switched but cannot verify."; fi
   fi
 }
 

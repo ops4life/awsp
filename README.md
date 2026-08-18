@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="awsp.png" alt="awsp - AWS profile switcher" width="200" />
+  <img src="awsp.png" alt="awsp - AWS profile switcher" width="100%" />
 </p>
 
 # awsp — AWS profile switcher

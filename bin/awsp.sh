@@ -395,7 +395,7 @@ USG
       return 1
     fi
 
-    _api_url="https://api.github.com/repos/duyluann/awsp/releases/latest"
+    _api_url="https://api.github.com/repos/ops4life/awsp/releases/latest"
     _response=$(curl -s -f "$_api_url" 2>/dev/null) || {
       echo "Error: Failed to fetch latest version from GitHub" >&2
       return 1
@@ -510,7 +510,7 @@ USG
     }
 
     # Download tarball
-    _tarball_url="https://github.com/duyluann/awsp/archive/refs/tags/v${_target_version}.tar.gz"
+    _tarball_url="https://github.com/ops4life/awsp/archive/refs/tags/v${_target_version}.tar.gz"
     _tarball="$_tmp_dir/awsp.tar.gz"
 
     if ! curl -L -s -f -o "$_tarball" "$_tarball_url"; then

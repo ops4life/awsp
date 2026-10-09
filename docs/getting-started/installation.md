@@ -6,7 +6,6 @@
 | macOS / Linux / WSL | install script | `curl -fsSL https://raw.githubusercontent.com/ops4life/awsp/main/install.sh \| sh` |
 | Windows (PowerShell) | install script | `irm https://raw.githubusercontent.com/ops4life/awsp/main/install.ps1 \| iex` |
 | Windows | [Chocolatey](https://chocolatey.org/) (from the next release) | `choco install awsp --params "/Profile"` |
-| Windows | [winget](https://learn.microsoft.com/windows/package-manager/) (from the next release) | `winget install ops4life.awsp` |
 | Debian / Ubuntu | `.deb` from [Releases](https://github.com/ops4life/awsp/releases) | `sudo dpkg -i awsp_<version>_all.deb` |
 | Any | from source | `git clone https://github.com/ops4life/awsp.git && cd awsp && make install` |
 
@@ -26,7 +25,7 @@ must source them. After installing, add the matching line to `~/.bashrc` / `~/.z
 
 Upgrade with the same tool you installed with (`brew upgrade awsp`, re-run the install
 script, or install the newer `.deb`). On Windows, use the PowerShell installer above (WSL and Git Bash use the POSIX install script).
-The Chocolatey package leaves your profile alone unless you pass `/Profile` (it then edits the all-users PowerShell profiles); otherwise add `. "$env:ChocolateyInstall\lib\awsp\tools\awsp.ps1"` to your `$PROFILE`. The winget installer adds the line to your user profile and removes it on uninstall.
+The Chocolatey package leaves your profile alone unless you pass `/Profile` (it then edits the all-users PowerShell profiles); otherwise add `. "$env:ChocolateyInstall\lib\awsp\tools\awsp.ps1"` to your `$PROFILE`.
 If PowerShell blocks your profile, run `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned` once.
 Uninstall with `$env:AWSP_UNINSTALL=1; irm https://raw.githubusercontent.com/ops4life/awsp/main/install.ps1 | iex`.
 

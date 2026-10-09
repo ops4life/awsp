@@ -11,3 +11,4 @@ README.md
 mkdocs.yml
 requirements.txt
 docs/
+.github/workflows/pre-commit-ci.yaml

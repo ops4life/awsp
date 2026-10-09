@@ -2,10 +2,13 @@
 
 | Platform | Method | Command |
 |---|---|---|
-| macOS / Linux | [Homebrew](https://brew.sh/) | `brew tap ops4life/awsp && brew install awsp` |
+| macOS / Linux | [Homebrew](https://brew.sh/) | `brew tap ops4life/awsp && brew trust ops4life/awsp && brew install awsp` |
 | macOS / Linux / WSL | install script | `curl -fsSL https://raw.githubusercontent.com/ops4life/awsp/main/install.sh \| sh` |
 | Debian / Ubuntu | `.deb` from [Releases](https://github.com/ops4life/awsp/releases) | `sudo dpkg -i awsp_<version>_all.deb` |
 | Any | from source | `git clone https://github.com/ops4life/awsp.git && cd awsp && make install` |
+
+Recent Homebrew versions refuse to load formulae from a tap you have not trusted, so the
+install needs the `brew trust` step. If your Homebrew has no `brew trust` command, skip it.
 
 `awsp` is a shell function, so a package can only install the files — your shell
 must source them. After installing, add the matching line to `~/.bashrc` / `~/.zshrc`

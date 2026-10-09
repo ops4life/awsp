@@ -53,3 +53,62 @@ jobs:
             echo '```'
             echo "</details>"
           } >> "$GITHUB_STEP_SUMMARY"
+
+  release-artifacts:
+    name: release artifacts
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v7
+
+      - name: Build artifacts
+        run: scripts/build-release.sh 0.0.0-test
+
+  pester:
+    name: pester (${{ matrix.shell }})
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        shell: [pwsh, powershell]
+    defaults:
+      run:
+        shell: ${{ matrix.shell }}
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v7
+
+      - name: Install Pester
+        run: |
+          Set-PSRepository PSGallery -InstallationPolicy Trusted
+          Install-Module Pester -MinimumVersion 5.5.0 -MaximumVersion 5.99.99 -Force -SkipPublisherCheck -Scope CurrentUser
+
+      - name: Run Pester
+        run: |
+          Import-Module Pester -MinimumVersion 5.5.0 -MaximumVersion 5.99.99
+          $c = New-PesterConfiguration
+          $c.Run.Path = './tests'
+          $c.Run.Exit = $true
+          $c.Output.Verbosity = 'Detailed'
+          Invoke-Pester -Configuration $c
+
+  psscriptanalyzer:
+    name: psscriptanalyzer
+    runs-on: windows-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v7
+
+      - name: Lint PowerShell
+        shell: pwsh
+        run: |
+          Set-PSRepository PSGallery -InstallationPolicy Trusted
+          Install-Module PSScriptAnalyzer -Force -Scope CurrentUser
+          $exclude = 'PSAvoidUsingWriteHost', 'PSUseApprovedVerbs', 'PSAvoidGlobalVars',
+            'PSUseShouldProcessForStateChangingFunctions', 'PSAvoidUsingPositionalParameters',
+            'PSUseSingularNouns', 'PSAvoidAssignmentToAutomaticVariable', 'PSReviewUnusedParameter'
+          $paths = Get-ChildItem -Path bin, completions, scripts -Recurse -Filter '*.ps1' -ErrorAction SilentlyContinue | ForEach-Object FullName
+          if (Test-Path install.ps1) { $paths += (Resolve-Path install.ps1).Path }
+          $r = foreach ($p in $paths) { Invoke-ScriptAnalyzer -Path $p -Severity Warning, Error -ExcludeRule $exclude }
+          $r | Format-Table -AutoSize
+          if ($r) { exit 1 }

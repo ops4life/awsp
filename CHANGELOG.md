@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+# [1.10.0](https://github.com/ops4life/awsp/compare/v1.9.0...v1.10.0) (2026-10-09)
+
+
+### Features
+
+* add PowerShell installer and Windows release zip ([#55](https://github.com/ops4life/awsp/issues/55)) ([5f29efe](https://github.com/ops4life/awsp/commit/5f29efe6ea6b1057428a3bff4890ca85504db5f1))
+
 # [1.9.0](https://github.com/ops4life/awsp/compare/v1.8.1...v1.9.0) (2026-10-09)
 
 

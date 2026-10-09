@@ -12,21 +12,46 @@ Tiny cross-shell function to switch AWS profiles (with SSO auto-login if needed)
 - No `fzf` dependency — numbered picker when no profile is passed.
 - Extras: list profiles, show current, unset env, force login, verify identity (table/json).
 
-## Install (recommended)
+## Install
+
+| Platform | Method | Command |
+|---|---|---|
+| macOS / Linux | [Homebrew](https://brew.sh/) | `brew install ops4life/awsp/awsp` |
+| macOS / Linux / WSL | install script | `curl -fsSL https://raw.githubusercontent.com/ops4life/awsp/main/install.sh \| sh` |
+| Debian / Ubuntu | `.deb` from [Releases](https://github.com/ops4life/awsp/releases) | `sudo dpkg -i awsp_<version>_all.deb` |
+| Any | from source | `git clone https://github.com/ops4life/awsp.git && cd awsp && make install` |
+
+`awsp` is a shell function, so a package can only install the files — your shell
+must source them. After installing, add the matching line to `~/.bashrc` / `~/.zshrc`
+(the install script and `make install` do this for you):
 
 ```bash
-git clone https://github.com/ops4life/awsp.git
-cd awsp
-
-make install
-
-# then restart your shell, or run:
-. "$HOME/.config/awsp/awsp.sh"
+# Homebrew
+[ -f "$(brew --prefix)/share/awsp/awsp.sh" ] && . "$(brew --prefix)/share/awsp/awsp.sh"
+# .deb
+[ -f /usr/share/awsp/awsp.sh ] && . /usr/share/awsp/awsp.sh
 ```
 
-This installs into `~/.config/awsp/` and adds a source line to your shell rc file.
+Upgrade with the same tool you installed with (`brew upgrade awsp`, re-run the install
+script, or install the newer `.deb`). Windows is supported through WSL or Git Bash only.
 
-After installation, **reload your shell** or source the script manually as shown above.
+<details>
+<summary>Plugin managers (zsh)</summary>
+
+```zsh
+# zinit
+zinit ice pick"bin/awsp.sh"
+zinit light ops4life/awsp
+
+# antidote (~/.zsh_plugins.txt)
+ops4life/awsp path:bin/awsp.sh kind:source
+
+# oh-my-zsh
+git clone https://github.com/ops4life/awsp ~/.oh-my-zsh/custom/plugins/awsp
+echo 'source ~/.oh-my-zsh/custom/plugins/awsp/bin/awsp.sh' >> ~/.zshrc
+```
+
+</details>
 
 ## Uninstall
 

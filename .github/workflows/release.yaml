@@ -9,6 +9,8 @@ jobs:
   release:
     name: Release
     runs-on: ubuntu-24.04
+    env:
+      HOMEBREW_TAP_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -17,6 +19,7 @@ jobs:
           fetch-depth: 0
 
       - name: Release
+        id: release
         uses: cycjimmy/semantic-release-action@v6
         with:
           semantic_version: 18.0.0
@@ -26,3 +29,29 @@ jobs:
             @semantic-release/exec@6.0.0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build release artifacts
+        if: steps.release.outputs.new_release_published == 'true'
+        run: scripts/build-release.sh "${{ steps.release.outputs.new_release_version }}"
+
+      - name: Upload release artifacts
+        if: steps.release.outputs.new_release_published == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh release upload "v${{ steps.release.outputs.new_release_version }}" dist/* --clobber
+
+      - name: Bump Homebrew tap
+        if: steps.release.outputs.new_release_published == 'true' && env.HOMEBREW_TAP_TOKEN != ''
+        env:
+          VERSION: ${{ steps.release.outputs.new_release_version }}
+        run: |
+          set -eu
+          url="https://github.com/ops4life/awsp/archive/refs/tags/v${VERSION}.tar.gz"
+          sha="$(curl -fsSL "$url" | sha256sum | cut -d' ' -f1)"
+          git clone "https://x-access-token:${HOMEBREW_TAP_TOKEN}@github.com/ops4life/homebrew-awsp.git" tap
+          cd tap
+          sed -i -E "s|^  url .*|  url \"${url}\"|; s|^  sha256 .*|  sha256 \"${sha}\"|" Formula/awsp.rb
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -am "awsp ${VERSION}"
+          git push

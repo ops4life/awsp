@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.6.1](https://github.com/ops4life/awsp/compare/v1.6.0...v1.6.1) (2026-10-09)
+
+
+### Bug Fixes
+
+* **ci:** make pre-commit CI pass ([#49](https://github.com/ops4life/awsp/issues/49)) ([8263149](https://github.com/ops4life/awsp/commit/8263149f9558136cc56f416f6e3fdddea48f0f24))
+
 # [1.6.0](https://github.com/ops4life/awsp/compare/v1.5.1...v1.6.0) (2026-08-18)
 
 

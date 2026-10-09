@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+# [1.11.0](https://github.com/ops4life/awsp/compare/v1.10.0...v1.11.0) (2026-10-09)
+
+
+### Features
+
+* add Chocolatey and winget packages for Windows ([#56](https://github.com/ops4life/awsp/issues/56)) ([7d13b6a](https://github.com/ops4life/awsp/commit/7d13b6aee0ea26ba9d0092c2ab9738819200b00f))
+
 # [1.10.0](https://github.com/ops4life/awsp/compare/v1.9.0...v1.10.0) (2026-10-09)
 
 

@@ -10,7 +10,7 @@
     [
       "@semantic-release/exec",
       {
-        "prepareCmd": "sed -i.bak 's/^AWSP_VERSION=\".*\"/AWSP_VERSION=\"${nextRelease.version}\"/' bin/awsp.sh && rm bin/awsp.sh.bak"
+        "prepareCmd": "sed -i.bak 's/^AWSP_VERSION=\".*\"/AWSP_VERSION=\"${nextRelease.version}\"/' bin/awsp.sh && rm bin/awsp.sh.bak && sed -i.bak 's/^$global:AWSP_VERSION = \".*\"/$global:AWSP_VERSION = \"${nextRelease.version}\"/' bin/awsp.ps1 && rm bin/awsp.ps1.bak"
       }
     ],
     [
@@ -34,7 +34,8 @@
       {
         "assets": [
           "CHANGELOG.md",
-          "bin/awsp.sh"
+          "bin/awsp.sh",
+          "bin/awsp.ps1"
         ],
         "message": "chore(release): version ${nextRelease.version} [skip ci]\n\n${nextRelease.notes}"
       }

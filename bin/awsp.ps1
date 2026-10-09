@@ -209,7 +209,7 @@ function _awsp_remove_section([string]$path, [string]$name, [bool]$isConfig) {
       if (-not $skip) { $out.Add($line) }
     }
     [System.IO.File]::WriteAllLines($path, $out.ToArray())
-  } catch { }
+  } catch { Write-Verbose "awsp: could not rewrite ${path}: $_" }
 }
 
 function awsp {
@@ -353,7 +353,7 @@ function awsp {
     $stateDir = _awsp_state_dir
     New-Item -ItemType Directory -Force -Path $stateDir | Out-Null
     [System.IO.File]::WriteAllText((Join-Path $stateDir 'current_profile'), "$prof`n")
-  } catch { }
+  } catch { Write-Verbose "awsp: could not save the current profile: $_" }
 
   # ---------- verify / login logic ----------
   if ($hasAws) {
@@ -382,3 +382,13 @@ function awsp {
 
 # Restore the profile saved by the last `awsp <profile>` (silent).
 _awsp_autoload
+
+# Tab completion: next to the script (installed layout) or in ../completions (repo layout).
+if ($PSCommandPath) {
+  $_awspDir = Split-Path -Parent $PSCommandPath
+  foreach ($_awspCand in (Join-Path (Join-Path $_awspDir 'completions') 'awsp.completion.ps1'),
+                         (Join-Path (Join-Path (Split-Path -Parent $_awspDir) 'completions') 'awsp.completion.ps1')) {
+    if (Test-Path -LiteralPath $_awspCand -PathType Leaf) { . $_awspCand; break }
+  }
+  Remove-Variable _awspDir, _awspCand -ErrorAction SilentlyContinue
+}

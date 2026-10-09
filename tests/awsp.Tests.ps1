@@ -471,5 +471,46 @@ Describe '--modify' {
   }
 }
 
+Describe 'completion' {
+  It 'completes long flags' {
+    $r = @(_awsp_complete_words '--j')
+    $r.Count | Should -Be 1
+    $r[0].CompletionText | Should -Be '--json'
+  }
+
+  It 'completes every flag when given a bare dash' {
+    @(_awsp_complete_words '-').Count | Should -BeGreaterThan 15
+  }
+
+  It 'completes profile names' {
+    $env:MOCK_AWS_PROFILES = "dev`nprod`nprod-eu"
+    $names = @(_awsp_complete_words 'pro' | ForEach-Object CompletionText)
+    $names | Should -Be @('prod', 'prod-eu')
+  }
+
+  It 'quotes profile names containing spaces' {
+    $env:MOCK_AWS_PROFILES = 'my dev'
+    @(_awsp_complete_words 'my')[0].CompletionText | Should -Be "'my dev'"
+  }
+}
+
+Describe 'parity with awsp.sh' {
+  It 'has the same version' {
+    $sh = [regex]::Match((Get-Content -Raw (Join-Path $script:Repo 'bin/awsp.sh')), '(?m)^AWSP_VERSION="([^"]+)"').Groups[1].Value
+    $global:AWSP_VERSION | Should -Be $sh
+  }
+
+  It 'documents the same flags' {
+    $text = Get-Content -Raw (Join-Path $script:Repo 'bin/awsp.sh')
+    $usage = [regex]::Match($text, "(?s)<<'USG'\r?\n(.*?)\r?\nUSG").Groups[1].Value
+    $optLine = '(?m)^\s+(-[A-Za-z], )?(--[\w-]+|-[A-Za-z])'
+    $flags = { param($t) [regex]::Matches($t, $optLine) | ForEach-Object { $_.Groups[1].Value.Trim(', '), $_.Groups[2].Value } | Where-Object { $_ } | Sort-Object -Unique }
+    $shFlags = & $flags $usage
+    $psFlags = & $flags (awsp --help *>&1 | Out-String)
+    ($psFlags -join ',') | Should -Be ($shFlags -join ',')
+    @($shFlags).Count | Should -BeGreaterThan 15
+  }
+}
+
 # APPEND-TESTS-ABOVE
 }

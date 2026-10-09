@@ -139,6 +139,56 @@ function _awsp_aws_quiet([string[]]$a) {
   return ($LASTEXITCODE -eq 0)
 }
 
+function _awsp_is_sso_profile([string]$name) {
+  $cfg = Join-Path (Join-Path (_awsp_home) '.aws') 'config'
+  if (-not (Test-Path -LiteralPath $cfg -PathType Leaf)) { return $false }
+  try { $lines = [System.IO.File]::ReadAllLines($cfg) } catch { return $false }
+  $in = $false
+  foreach ($line in $lines) {
+    $sec = _awsp_config_section_name $line
+    if ($null -ne $sec) { $in = ($sec -ceq $name); continue }
+    if ($in -and $line -match '^\s*(sso_start_url|sso_region|sso_account_id|sso_role_name)') { return $true }
+  }
+  return $false
+}
+
+# Comment out static keys in ~/.aws/credentials for an SSO profile (they would override SSO).
+function _awsp_disable_static_creds([string]$name, [bool]$quiet = $true) {
+  if (-not (_awsp_is_sso_profile $name)) { return }
+  $creds = Join-Path (Join-Path (_awsp_home) '.aws') 'credentials'
+  if (-not (Test-Path -LiteralPath $creds -PathType Leaf)) { return }
+  try { $lines = [System.IO.File]::ReadAllLines($creds) } catch { return }
+  $out = New-Object System.Collections.Generic.List[string]
+  $in = $false; $modified = $false
+  foreach ($line in $lines) {
+    if ($line -ceq "[$name]") { $in = $true; $out.Add($line) }
+    elseif ($line.StartsWith('[')) { $in = $false; $out.Add($line) }
+    elseif ($in -and $line -match '^(aws_access_key_id|aws_secret_access_key|aws_session_token)') {
+      $out.Add("# $line"); $modified = $true
+    }
+    else { $out.Add($line) }
+  }
+  if (-not $modified) { return }
+  try {
+    Copy-Item -LiteralPath $creds -Destination ("$creds.backup." + (Get-Date -Format yyyyMMddHHmmss)) -ErrorAction Stop
+    [System.IO.File]::WriteAllLines($creds, $out.ToArray())
+  } catch { return }
+  if (-not $quiet) { Write-Host '-> Disabled static credentials in ~/.aws/credentials (backup created)' }
+}
+
+function _awsp_autoload {
+  if ($env:AWS_PROFILE) { return }
+  $file = Join-Path (_awsp_state_dir) 'current_profile'
+  if (-not (Test-Path -LiteralPath $file -PathType Leaf)) { return }
+  try { $saved = ([string](Get-Content -LiteralPath $file -TotalCount 1 -ErrorAction Stop)).Trim() } catch { return }
+  if (-not $saved) { return }
+  foreach ($v in 'AWS_ACCESS_KEY_ID', 'AWS_SECRET_ACCESS_KEY', 'AWS_SESSION_TOKEN') { Remove-Item "Env:$v" -ErrorAction SilentlyContinue }
+  _awsp_disable_static_creds $saved $true
+  $env:AWS_SDK_LOAD_CONFIG = '1'
+  $env:AWS_PROFILE = $saved
+  $env:AWS_DEFAULT_PROFILE = $saved
+}
+
 function awsp {
   $ErrorActionPreference = 'Continue'
   $listOnly = $false; $showCurrent = $false; $forceLogin = $false; $unsetOnly = $false
@@ -212,6 +262,9 @@ function awsp {
   $env:AWS_DEFAULT_PROFILE = $prof
   if (-not $quiet) { Write-Host "-> Switched to $prof" }
 
+  # Disable static credentials in the credentials file to prevent conflicts with SSO
+  _awsp_disable_static_creds $prof $quiet
+
   # Save profile for auto-load in future shells (silent)
   try {
     $stateDir = _awsp_state_dir
@@ -243,3 +296,6 @@ function awsp {
   }
   $global:LASTEXITCODE = 0
 }
+
+# Restore the profile saved by the last `awsp <profile>` (silent).
+_awsp_autoload

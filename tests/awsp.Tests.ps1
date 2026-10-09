@@ -244,5 +244,93 @@ Describe 'verify / login flow' {
   }
 }
 
+Describe 'SSO detection and static credentials' {
+  It '_awsp_is_sso_profile detects an SSO profile' {
+    Write-ConfigProfile -Name 'dev' -Sso
+    _awsp_is_sso_profile 'dev' | Should -BeTrue
+  }
+
+  It '_awsp_is_sso_profile rejects a non-SSO profile' {
+    Write-ConfigProfile -Name 'dev'
+    _awsp_is_sso_profile 'dev' | Should -BeFalse
+  }
+
+  It '_awsp_is_sso_profile is false when ~/.aws/config is missing' {
+    _awsp_is_sso_profile 'dev' | Should -BeFalse
+  }
+
+  It 'works on config files with a UTF-8 BOM and CRLF line endings' {
+    $cfg = Join-Path (Join-Path $env:USERPROFILE '.aws') 'config'
+    $text = "[profile dev]`r`nsso_start_url = https://x`r`nsso_region = us-east-1`r`n"
+    [System.IO.File]::WriteAllText($cfg, $text, (New-Object System.Text.UTF8Encoding $true))
+    _awsp_is_sso_profile 'dev' | Should -BeTrue
+    Remove-Item Function:\aws
+    $env:PATH = Join-Path $script:TestHome 'empty'
+    (awsp --list *>&1 | Out-String) | Should -Match 'dev'
+  }
+
+  It 'comments out static creds for SSO profiles and keeps a backup' {
+    Write-ConfigProfile -Name 'dev' -Sso
+    Write-CredsProfile -Name 'dev'
+    Write-CredsProfile -Name 'other'
+    _awsp_disable_static_creds 'dev' $true
+    $creds = Get-Content -LiteralPath (Join-Path (Join-Path $env:USERPROFILE '.aws') 'credentials')
+    $creds | Should -Contain '# aws_access_key_id = AKIAFAKE'
+    @($creds | Where-Object { $_ -eq 'aws_access_key_id = AKIAFAKE' }).Count | Should -Be 1   # [other] untouched
+    @(Get-ChildItem -LiteralPath (Join-Path $env:USERPROFILE '.aws') -Filter 'credentials.backup.*').Count | Should -Be 1
+  }
+
+  It 'leaves credentials alone for non-SSO profiles' {
+    Write-ConfigProfile -Name 'dev'
+    Write-CredsProfile -Name 'dev'
+    _awsp_disable_static_creds 'dev' $true
+    (Get-Content -LiteralPath (Join-Path (Join-Path $env:USERPROFILE '.aws') 'credentials')) | Should -Contain 'aws_access_key_id = AKIAFAKE'
+  }
+
+  It 'switching to an SSO profile disables its static creds' {
+    $env:MOCK_AWS_PROFILES = 'dev'
+    Write-ConfigProfile -Name 'dev' -Sso
+    Write-CredsProfile -Name 'dev'
+    $out = awsp dev --no-verify *>&1 | Out-String
+    $out | Should -Match 'Disabled static credentials'
+    (Get-Content -LiteralPath (Join-Path (Join-Path $env:USERPROFILE '.aws') 'credentials')) | Should -Contain '# aws_access_key_id = AKIAFAKE'
+  }
+}
+
+Describe 'auto-load' {
+  BeforeEach {
+    $script:StateDir = Join-Path (Join-Path $env:USERPROFILE '.config') 'awsp'
+    New-Item -ItemType Directory -Force -Path $script:StateDir | Out-Null
+  }
+
+  It 'restores a previously saved profile at startup' {
+    Set-Content -LiteralPath (Join-Path $script:StateDir 'current_profile') -Value 'dev'
+    . $script:AwspPs1
+    $env:AWS_PROFILE | Should -Be 'dev'
+    $env:AWS_DEFAULT_PROFILE | Should -Be 'dev'
+  }
+
+  It 'trims CRLF in the saved file' {
+    [System.IO.File]::WriteAllText((Join-Path $script:StateDir 'current_profile'), "dev`r`n")
+    . $script:AwspPs1
+    $env:AWS_PROFILE | Should -Be 'dev'
+  }
+
+  It 'ignores empty or whitespace-only saved files' {
+    foreach ($content in '', '   ', "`r`n") {
+      [System.IO.File]::WriteAllText((Join-Path $script:StateDir 'current_profile'), $content)
+      . $script:AwspPs1
+      $env:AWS_PROFILE | Should -BeNullOrEmpty
+    }
+  }
+
+  It 'does not override an already-set AWS_PROFILE' {
+    Set-Content -LiteralPath (Join-Path $script:StateDir 'current_profile') -Value 'dev'
+    $env:AWS_PROFILE = 'prod'
+    . $script:AwspPs1
+    $env:AWS_PROFILE | Should -Be 'prod'
+  }
+}
+
 # APPEND-TESTS-ABOVE
 }

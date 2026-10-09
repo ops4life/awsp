@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+# [1.8.0](https://github.com/ops4life/awsp/compare/v1.7.0...v1.8.0) (2026-10-09)
+
+
+### Features
+
+* **ci:** add manual workflow to bump the Homebrew tap ([#50](https://github.com/ops4life/awsp/issues/50)) ([6d5d42e](https://github.com/ops4life/awsp/commit/6d5d42edf968fce71eb331de871750b5a0290844))
+
 # [1.7.0](https://github.com/ops4life/awsp/compare/v1.6.1...v1.7.0) (2026-10-09)
 
 

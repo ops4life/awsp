@@ -4,6 +4,16 @@
 
 AWSP_VERSION="1.8.0"
 
+# Remember where this file lives (only knowable at source time, not inside functions in zsh)
+if [ -n "${BASH_VERSION-}" ]; then
+  _AWSP_SCRIPT="${BASH_SOURCE[0]}"
+elif [ -n "${ZSH_VERSION-}" ]; then
+  _AWSP_SCRIPT="${(%):-%x}"
+fi
+if [ -n "${_AWSP_SCRIPT-}" ]; then
+  _AWSP_SCRIPT="$(cd "$(dirname "$_AWSP_SCRIPT")" 2>/dev/null && pwd)/$(basename "$_AWSP_SCRIPT")"
+fi
+
 # Helper to check if profile is SSO-based
 _awsp_is_sso_profile() {
   _check_profile="$1"
@@ -378,7 +388,7 @@ USG
 
   _awsp_detect_install_type() {
     # Returns: "git" or "release"
-    _script_path="${BASH_SOURCE[0]:-${(%):-%x}}"
+    _script_path="${_AWSP_SCRIPT:-${BASH_SOURCE[0]:-${(%):-%x}}}"
     _script_dir="$(cd "$(dirname "$_script_path")" && pwd)"
     _check_dir="$_script_dir"
     _depth=0
@@ -610,12 +620,24 @@ USG
   }
 
   _awsp_upgrade() {
+    # Detect installation directory
+    _script_path="${_AWSP_SCRIPT:-${BASH_SOURCE[0]:-${(%):-%x}}}"
+    _install_dir="$(cd "$(dirname "$_script_path")" && pwd)"
+
+    # Package-managed installs must be upgraded by their package manager
+    case "$_install_dir" in
+      */Cellar/awsp/*/share/awsp|*/opt/awsp/share/awsp|/opt/homebrew/share/awsp|/usr/local/share/awsp|*/.linuxbrew/share/awsp)
+        echo "awsp was installed with Homebrew; upgrade with: brew upgrade awsp"
+        return 0
+        ;;
+      /usr/share/awsp)
+        echo "awsp was installed from a .deb package; install the newer .deb to upgrade"
+        return 0
+        ;;
+    esac
+
     echo "awsp upgrade"
     echo "────────────"
-
-    # Detect installation directory
-    _script_path="${BASH_SOURCE[0]:-${(%):-%x}}"
-    _install_dir="$(cd "$(dirname "$_script_path")" && pwd)"
 
     # Show current version
     echo "Current version: $AWSP_VERSION"

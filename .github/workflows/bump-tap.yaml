@@ -1,0 +1,27 @@
+name: Bump Homebrew tap
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version to publish to the tap, e.g. 1.7.0 (default is the latest release)"
+        required: false
+
+jobs:
+  bump:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Bump tap
+        env:
+          HOMEBREW_TAP_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          INPUT_VERSION: ${{ inputs.version }}
+        run: |
+          set -eu
+          version="${INPUT_VERSION:-$(gh release view --repo "$GITHUB_REPOSITORY" --json tagName -q .tagName)}"
+          scripts/bump-tap.sh "${version#v}"

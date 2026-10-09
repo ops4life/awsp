@@ -17,6 +17,7 @@ BeforeAll {
 
   function script:Invoke-Installer {
     param([hashtable]$Env)
+    $ErrorActionPreference = 'Continue'   # Windows PowerShell 5.1 turns child stderr into terminating errors under Stop
     $saved = @{}
     foreach ($k in $Env.Keys) { $saved[$k] = [Environment]::GetEnvironmentVariable($k); [Environment]::SetEnvironmentVariable($k, $Env[$k]) }
     try { & $script:HostExe -NoProfile -ExecutionPolicy Bypass -File $script:Installer *>&1 | Out-String }

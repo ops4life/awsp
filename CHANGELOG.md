@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+# [1.7.0](https://github.com/ops4life/awsp/compare/v1.6.1...v1.7.0) (2026-10-09)
+
+
+### Features
+
+* add Homebrew, install script and .deb distribution ([#48](https://github.com/ops4life/awsp/issues/48)) ([d2ad694](https://github.com/ops4life/awsp/commit/d2ad694648bc31e3fca4582ae2a7f63fab99dd41))
+
 ## [1.6.1](https://github.com/ops4life/awsp/compare/v1.6.0...v1.6.1) (2026-10-09)
 
 

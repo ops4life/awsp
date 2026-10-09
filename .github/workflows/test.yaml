@@ -112,3 +112,30 @@ jobs:
           $r = foreach ($p in $paths) { Invoke-ScriptAnalyzer -Path $p -Severity Warning, Error -ExcludeRule $exclude }
           $r | Format-Table -AutoSize
           if ($r) { exit 1 }
+
+  windows-packages:
+    name: windows packages
+    runs-on: windows-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v7
+
+      - name: Install Inno Setup
+        shell: pwsh
+        run: choco install innosetup -y --no-progress
+
+      - name: Install Pester
+        shell: pwsh
+        run: |
+          Set-PSRepository PSGallery -InstallationPolicy Trusted
+          Install-Module Pester -MinimumVersion 5.5.0 -MaximumVersion 5.99.99 -Force -SkipPublisherCheck -Scope CurrentUser
+
+      - name: Build, install and uninstall the packages
+        shell: pwsh
+        run: |
+          Import-Module Pester -MinimumVersion 5.5.0 -MaximumVersion 5.99.99
+          $c = New-PesterConfiguration
+          $c.Run.Path = './tests/packaging.Tests.ps1'
+          $c.Run.Exit = $true
+          $c.Output.Verbosity = 'Detailed'
+          Invoke-Pester -Configuration $c

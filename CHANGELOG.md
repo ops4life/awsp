@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+# [1.9.0](https://github.com/ops4life/awsp/compare/v1.8.1...v1.9.0) (2026-10-09)
+
+
+### Features
+
+* add native PowerShell (Windows) port of awsp ([#54](https://github.com/ops4life/awsp/issues/54)) ([9d1eaa1](https://github.com/ops4life/awsp/commit/9d1eaa121d3bdd0e4a71437199f0a9e4eaad6c2c))
+
 ## [1.8.1](https://github.com/ops4life/awsp/compare/v1.8.0...v1.8.1) (2026-10-09)
 
 

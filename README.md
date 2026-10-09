@@ -16,7 +16,7 @@ Tiny cross-shell function to switch AWS profiles (with SSO auto-login if needed)
 
 | Platform | Method | Command |
 |---|---|---|
-| macOS / Linux | [Homebrew](https://brew.sh/) | `brew install ops4life/awsp/awsp` |
+| macOS / Linux | [Homebrew](https://brew.sh/) | `brew tap ops4life/awsp && brew install awsp` |
 | macOS / Linux / WSL | install script | `curl -fsSL https://raw.githubusercontent.com/ops4life/awsp/main/install.sh \| sh` |
 | Debian / Ubuntu | `.deb` from [Releases](https://github.com/ops4life/awsp/releases) | `sudo dpkg -i awsp_<version>_all.deb` |
 | Any | from source | `git clone https://github.com/ops4life/awsp.git && cd awsp && make install` |

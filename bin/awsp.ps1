@@ -189,6 +189,29 @@ function _awsp_autoload {
   $env:AWS_DEFAULT_PROFILE = $saved
 }
 
+# Remove one profile section from a config ($isConfig) or credentials file, keeping a timestamped backup.
+function _awsp_remove_section([string]$path, [string]$name, [bool]$isConfig) {
+  if (-not (Test-Path -LiteralPath $path -PathType Leaf)) { return }
+  try {
+    $lines = [System.IO.File]::ReadAllLines($path)
+    Copy-Item -LiteralPath $path -Destination ("$path.backup." + (Get-Date -Format yyyyMMddHHmmss)) -ErrorAction Stop
+    $out = New-Object System.Collections.Generic.List[string]
+    $skip = $false
+    foreach ($line in $lines) {
+      if ($isConfig) {
+        $sec = _awsp_config_section_name $line
+        $isHeader = ($null -ne $sec)
+        if ($isHeader) { $skip = ($sec -ceq $name) }
+      } else {
+        $isHeader = $line.StartsWith('[')
+        if ($isHeader) { $skip = ($line -ceq "[$name]") }
+      }
+      if (-not $skip) { $out.Add($line) }
+    }
+    [System.IO.File]::WriteAllLines($path, $out.ToArray())
+  } catch { }
+}
+
 function awsp {
   $ErrorActionPreference = 'Continue'
   $listOnly = $false; $showCurrent = $false; $forceLogin = $false; $unsetOnly = $false
@@ -240,7 +263,67 @@ function awsp {
   $profiles = @(_awsp_list_profiles $hasAws)
   $count = $profiles.Count
 
-  # (add/remove/modify are added in Task 4)
+  if ($addProfile) {
+    if (-not $hasAws) { _awsp_err 'awsp: aws CLI is required to add a profile'; $global:LASTEXITCODE = 1; return }
+    $newName = _awsp_read 'New profile name'
+    $tries = 1
+    while ([string]::IsNullOrEmpty($newName)) {
+      if ($tries -ge 5) { _awsp_err 'awsp: no profile name given'; $global:LASTEXITCODE = 1; return }
+      $newName = _awsp_read 'Profile name cannot be empty. New profile name'
+      $tries++
+    }
+    $type = _awsp_read "Profile type: [1] SSO (recommended)  [2] Static credentials`nSelect"
+    $global:LASTEXITCODE = 0
+    switch ($type) {
+      '1' {
+        $method = _awsp_read "SSO login method: [1] Open browser (recommended)  [2] Device code (no browser access)`nSelect"
+        if ($method -eq '2') { & aws configure sso --profile $newName --use-device-code }
+        else { & aws configure sso --profile $newName }
+      }
+      '2' { & aws configure --profile $newName }
+      default { _awsp_err 'awsp: invalid selection'; $global:LASTEXITCODE = 1; return }
+    }
+    if ($LASTEXITCODE -ne 0) { $global:LASTEXITCODE = 1; return }
+    $prof = $newName
+  }
+
+  if ($removeProfile) {
+    if (-not $prof) {
+      $prof = _awsp_pick $profiles $quiet
+      if (-not $prof) { $global:LASTEXITCODE = 1; return }
+    }
+    $answer = _awsp_read "Remove profile `"$prof`"? This deletes it from ~/.aws/config and ~/.aws/credentials (y/N)"
+    if ($answer -notmatch '^(y|yes)$') { Write-Host 'Removal cancelled.'; $global:LASTEXITCODE = 1; return }
+    $awsDir = Join-Path (_awsp_home) '.aws'
+    _awsp_remove_section (Join-Path $awsDir 'config') $prof $true
+    _awsp_remove_section (Join-Path $awsDir 'credentials') $prof $false
+    if ($env:AWS_PROFILE -ceq $prof) { _awsp_unset $quiet }
+    $saved = Join-Path (_awsp_state_dir) 'current_profile'
+    if ((Test-Path -LiteralPath $saved -PathType Leaf) -and ([string](Get-Content -LiteralPath $saved -TotalCount 1)).Trim() -ceq $prof) {
+      Remove-Item -LiteralPath $saved -Force -ErrorAction SilentlyContinue
+    }
+    Write-Host "-> Removed profile `"$prof`" (backups created)"
+    $global:LASTEXITCODE = 0; return
+  }
+
+  if ($modifyProfile) {
+    if (-not $hasAws) { _awsp_err 'awsp: aws CLI is required to modify a profile'; $global:LASTEXITCODE = 1; return }
+    if (-not $prof) {
+      $prof = _awsp_pick $profiles $quiet
+      if (-not $prof) { $global:LASTEXITCODE = 1; return }
+    }
+    $global:LASTEXITCODE = 0
+    if (_awsp_is_sso_profile $prof) {
+      $method = _awsp_read "SSO login method: [1] Open browser (recommended)  [2] Device code (no browser access)`nSelect"
+      if ($method -eq '2') { & aws configure sso --profile $prof --use-device-code }
+      else { & aws configure sso --profile $prof }
+    } else {
+      & aws configure --profile $prof
+    }
+    if ($LASTEXITCODE -ne 0) { $global:LASTEXITCODE = 1; return }
+    Write-Host "-> Updated profile `"$prof`""
+    $global:LASTEXITCODE = 0; return
+  }
 
   if ($count -eq 0 -and -not $addProfile) {
     Write-Host 'No AWS profiles found. Create one with: aws configure sso'

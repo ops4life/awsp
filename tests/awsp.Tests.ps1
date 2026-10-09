@@ -332,5 +332,144 @@ Describe 'auto-load' {
   }
 }
 
+Describe '--add' {
+  It 'requires the aws CLI' {
+    Remove-Item Function:\aws
+    $env:PATH = Join-Path $script:TestHome 'empty'
+    $out = awsp --add *>&1 | Out-String
+    $LASTEXITCODE | Should -Be 1
+    $out | Should -Match 'aws CLI is required'
+  }
+
+  It 're-prompts on an empty profile name' {
+    Set-AwspInput '', 'dev', '1', '1'
+    awsp --add --no-verify --quiet *>&1 | Out-Null
+    $LASTEXITCODE | Should -Be 0
+    (Get-Content -LiteralPath (Join-Path (_awsp_state_dir) 'current_profile') -Raw).Trim() | Should -Be 'dev'
+  }
+
+  It 'gives up after repeated empty profile names' {
+    Set-AwspInput '', '', '', '', '', ''
+    $out = awsp --add --quiet *>&1 | Out-String
+    $LASTEXITCODE | Should -Be 1
+    $out | Should -Match 'no profile name'
+  }
+
+  It 'SSO browser option calls aws configure sso without --use-device-code' {
+    Set-AwspInput 'dev', '1', '1'
+    awsp --add --no-verify --quiet *>&1 | Out-Null
+    $LASTEXITCODE | Should -Be 0
+    (Get-Content -LiteralPath $env:MOCK_AWS_LOG) | Should -Contain 'configure sso --profile dev'
+  }
+
+  It 'SSO device-code option passes --use-device-code' {
+    Set-AwspInput 'dev', '1', '2'
+    awsp --add --no-verify --quiet *>&1 | Out-Null
+    (Get-Content -LiteralPath $env:MOCK_AWS_LOG) | Should -Contain 'configure sso --profile dev --use-device-code'
+  }
+
+  It 'static credentials option calls aws configure' {
+    Set-AwspInput 'dev', '2'
+    awsp --add --no-verify --quiet *>&1 | Out-Null
+    (Get-Content -LiteralPath $env:MOCK_AWS_LOG) | Should -Contain 'configure --profile dev'
+    (Get-Content -LiteralPath (Join-Path (_awsp_state_dir) 'current_profile') -Raw).Trim() | Should -Be 'dev'
+  }
+
+  It 'an invalid profile-type selection fails' {
+    Set-AwspInput 'dev', '9'
+    $out = awsp --add --no-verify --quiet *>&1 | Out-String
+    $LASTEXITCODE | Should -Be 1
+    $out | Should -Match 'invalid selection'
+  }
+
+  It 'a failing aws configure aborts with exit 1' {
+    $env:MOCK_AWS_CONFIGURE_EXIT = '1'
+    Set-AwspInput 'dev', '2'
+    awsp --add --no-verify --quiet *>&1 | Out-Null
+    $LASTEXITCODE | Should -Be 1
+    $env:AWS_PROFILE | Should -BeNullOrEmpty
+  }
+}
+
+Describe '--remove' {
+  BeforeEach {
+    Write-ConfigProfile -Name 'dev.1'
+    Write-ConfigProfile -Name 'devX1'
+    Write-CredsProfile -Name 'dev.1'
+    Write-CredsProfile -Name 'devX1'
+    $env:MOCK_AWS_PROFILES = "dev.1`ndevX1"
+    $script:AwsDir = Join-Path $env:USERPROFILE '.aws'
+  }
+
+  It 'removes only the exact profile (dots are literal) and keeps backups' {
+    Set-AwspInput 'y'
+    awsp --remove 'dev.1' --quiet *>&1 | Out-Null
+    $LASTEXITCODE | Should -Be 0
+    $cfg = Get-Content -LiteralPath (Join-Path $script:AwsDir 'config')
+    $cfg | Should -Not -Contain '[profile dev.1]'
+    $cfg | Should -Contain '[profile devX1]'
+    $cred = Get-Content -LiteralPath (Join-Path $script:AwsDir 'credentials')
+    $cred | Should -Not -Contain '[dev.1]'
+    $cred | Should -Contain '[devX1]'
+    @(Get-ChildItem -LiteralPath $script:AwsDir -Filter 'config.backup.*').Count | Should -Be 1
+  }
+
+  It 'cancels unless the answer is yes' {
+    Set-AwspInput 'n'
+    $out = awsp --remove 'dev.1' *>&1 | Out-String
+    $LASTEXITCODE | Should -Be 1
+    $out | Should -Match 'Removal cancelled'
+    (Get-Content -LiteralPath (Join-Path $script:AwsDir 'config')) | Should -Contain '[profile dev.1]'
+  }
+
+  It 'prompts with the picker when no profile is given' {
+    Set-AwspInput '2', 'y'
+    awsp --remove --quiet *>&1 | Out-Null
+    (Get-Content -LiteralPath (Join-Path $script:AwsDir 'config')) | Should -Not -Contain '[profile devX1]'
+  }
+
+  It 'unsets the environment when the active profile is removed' {
+    $env:AWS_PROFILE = 'dev.1'
+    Set-AwspInput 'y'
+    awsp --remove 'dev.1' --quiet *>&1 | Out-Null
+    $env:AWS_PROFILE | Should -BeNullOrEmpty
+  }
+
+  It 'works on CRLF + BOM files' {
+    $cfg = Join-Path $script:AwsDir 'config'
+    [System.IO.File]::WriteAllText($cfg, "[profile a]`r`nregion = x`r`n[profile b]`r`nregion = y`r`n", (New-Object System.Text.UTF8Encoding $true))
+    Set-AwspInput 'y'
+    awsp --remove 'a' --quiet *>&1 | Out-Null
+    $left = Get-Content -LiteralPath $cfg
+    $left | Should -Not -Contain '[profile a]'
+    $left | Should -Contain '[profile b]'
+  }
+}
+
+Describe '--modify' {
+  BeforeEach { $env:MOCK_AWS_PROFILES = 'dev' }
+
+  It 'requires the aws CLI' {
+    Remove-Item Function:\aws
+    $env:PATH = Join-Path $script:TestHome 'empty'
+    awsp --modify dev *>&1 | Out-Null
+    $LASTEXITCODE | Should -Be 1
+  }
+
+  It 'reconfigures an SSO profile with aws configure sso' {
+    Write-ConfigProfile -Name 'dev' -Sso
+    Set-AwspInput '1'
+    awsp --modify dev *>&1 | Out-Null
+    $LASTEXITCODE | Should -Be 0
+    (Get-Content -LiteralPath $env:MOCK_AWS_LOG) | Should -Contain 'configure sso --profile dev'
+  }
+
+  It 'reconfigures a static profile with aws configure' {
+    Write-ConfigProfile -Name 'dev'
+    awsp --modify dev *>&1 | Out-Null
+    (Get-Content -LiteralPath $env:MOCK_AWS_LOG) | Should -Contain 'configure --profile dev'
+  }
+}
+
 # APPEND-TESTS-ABOVE
 }

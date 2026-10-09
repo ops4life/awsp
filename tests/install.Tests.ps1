@@ -1,4 +1,6 @@
-$onWindows = ($PSVersionTable.PSEdition -ne 'Core') -or [bool]$IsWindows
+# Restricted is the default only for Windows PowerShell (5.1); pwsh 7 defaults to RemoteSigned and its
+# Archive module cannot load under Restricted, so this scenario is Windows PowerShell only.
+$onWindows = ($PSVersionTable.PSEdition -ne 'Core')
 
 BeforeAll {
   $script:Repo = Split-Path -Parent $PSScriptRoot
@@ -87,7 +89,7 @@ Describe 'install.ps1' {
     Test-Path (Join-Path $script:Prefix 'awsp.ps1') | Should -BeFalse
   }
 
-  It 'works under the Restricted execution policy when piped to iex (Windows only)' -Skip:(-not $onWindows) {
+  It 'works under the Restricted execution policy when piped to iex (Windows PowerShell only)' -Skip:(-not $onWindows) {
     $env:AWSP_ARCHIVE = $script:Zip; $env:PREFIX = $script:Prefix; $env:AWSP_PROFILE_FILE = $script:Prof
     try {
       $out = & $script:HostExe -NoProfile -ExecutionPolicy Restricted -Command "Get-Content -Raw '$($script:Installer)' | Invoke-Expression" *>&1 | Out-String

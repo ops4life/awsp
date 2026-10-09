@@ -26,7 +26,8 @@ Describe 'Chocolatey package' {
     $nupkg = Join-Path $script:Out 'awsp.0.0.1.nupkg'
     Test-Path $nupkg | Should -BeTrue
     Add-Type -AssemblyName System.IO.Compression.FileSystem
-    $names = [System.IO.Compression.ZipFile]::OpenRead($nupkg).Entries.FullName
+    $zip = [System.IO.Compression.ZipFile]::OpenRead($nupkg)
+    try { $names = $zip.Entries.FullName } finally { $zip.Dispose() }   # an open handle would lock the nupkg on Windows
     $names | Should -Contain 'tools/awsp.ps1'
     $names | Should -Contain 'tools/awsp-profile.ps1'
     $names | Should -Contain 'tools/completions/awsp.completion.ps1'

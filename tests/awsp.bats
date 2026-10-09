@@ -292,3 +292,14 @@ write_creds_profile() {
   [ "$AWS_PROFILE" = "dev" ]
   [ "$AWS_DEFAULT_PROFILE" = "dev" ]
 }
+
+@test "awsp -U defers to Homebrew for brew-installed copies" {
+  _with_mock_aws
+  mkdir -p "$HOME/opt/awsp/share/awsp"
+  cp "$AWSP_SH" "$HOME/opt/awsp/share/awsp/awsp.sh"
+  source "$HOME/opt/awsp/share/awsp/awsp.sh"
+  run awsp -U
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"brew upgrade awsp"* ]]
+  [ ! -d "$HOME/opt/awsp/share/awsp.backup" ]
+}

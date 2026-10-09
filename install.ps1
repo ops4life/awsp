@@ -11,10 +11,10 @@
 #   AWSP_PROFILE_FILE  profile file to edit instead of the default ones (testing)
 #   AWSP_UNINSTALL=1   remove awsp instead of installing it
 # ASCII-only source: Windows PowerShell 5.1 reads BOM-less files as ANSI.
-$ErrorActionPreference = 'Stop'
-$ProgressPreference = 'SilentlyContinue'
 
 & {
+  $ErrorActionPreference = 'Stop'
+  $ProgressPreference = 'SilentlyContinue'
   $repo = 'ops4life/awsp'
   $userHome = $HOME
   if ($env:USERPROFILE) { $userHome = $env:USERPROFILE }
@@ -28,7 +28,9 @@ $ProgressPreference = 'SilentlyContinue'
     $hook = Join-Path $prefix 'awsp-profile.ps1'
     $hookArgs = @{ Action = $action; ScriptPath = (Join-Path $prefix 'awsp.ps1') }
     if ($env:AWSP_PROFILE_FILE) { $hookArgs.ProfileFile = $env:AWSP_PROFILE_FILE }
-    & $hook @hookArgs
+    # Run as a script block, not a file: the default Restricted execution policy blocks .ps1 files
+    # (but not `irm | iex`), and the installer must work for exactly those users.
+    & ([scriptblock]::Create([System.IO.File]::ReadAllText($hook))) @hookArgs
   }
 
   if ($env:AWSP_UNINSTALL -eq '1') {

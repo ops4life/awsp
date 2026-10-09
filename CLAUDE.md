@@ -6,6 +6,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 `awsp` is a lightweight, cross-shell AWS profile switcher with SSO auto-login support. It's implemented as a pure POSIX shell function (not a binary) and works in both Bash and Zsh without external dependencies like `fzf`.
 
+A native PowerShell port (`bin/awsp.ps1`, `bin/awsp-profile.ps1`, `completions/awsp.completion.ps1`, `install.ps1`) provides the same flags on Windows. Keep it in sync with `bin/awsp.sh`: the Pester parity tests (`tests/awsp.Tests.ps1`) check the version and the flag list. Run them with Pester 5 (`Invoke-Pester ./tests`).
+
 ## Core Architecture
 
 ### Single-Function Design
@@ -201,10 +203,14 @@ Since this is a shell function, testing should focus on:
 ```
 .
 ├── bin/
-│   └── awsp.sh          # Main shell function (178 lines)
+│   ├── awsp.sh          # Main shell function
+│   ├── awsp.ps1         # PowerShell port (Windows)
+│   └── awsp-profile.ps1 # Adds/removes the load line in PowerShell profiles
 ├── completions/
-│   ├── _awsp.zsh        # Zsh completion (28 lines)
-│   └── awsp.bash        # Bash completion (17 lines)
+│   ├── _awsp.zsh        # Zsh completion
+│   ├── awsp.bash        # Bash completion
+│   └── awsp.completion.ps1  # PowerShell completion
+├── install.sh / install.ps1 # Installers (POSIX / PowerShell)
 ├── Makefile             # Installation/uninstallation
 ├── .pre-commit-config.yaml
 ├── .releaserc.json      # Semantic release config

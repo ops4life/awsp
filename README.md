@@ -8,7 +8,7 @@
 
 Tiny cross-shell function to switch AWS profiles (with SSO auto-login if needed).
 
-- Works in **Bash** and **Zsh**.
+- Works in **Bash**, **Zsh** and **PowerShell** (Windows PowerShell 5.1 / PowerShell 7+).
 - No `fzf` dependency — numbered picker when no profile is passed.
 - Extras: list profiles, show current, unset env, force login, verify identity (table/json).
 
@@ -18,6 +18,7 @@ Tiny cross-shell function to switch AWS profiles (with SSO auto-login if needed)
 |---|---|---|
 | macOS / Linux | [Homebrew](https://brew.sh/) | `brew tap ops4life/awsp && brew trust ops4life/awsp && brew install awsp` |
 | macOS / Linux / WSL | install script | `curl -fsSL https://raw.githubusercontent.com/ops4life/awsp/main/install.sh \| sh` |
+| Windows (PowerShell) | install script | `irm https://raw.githubusercontent.com/ops4life/awsp/main/install.ps1 \| iex` |
 | Debian / Ubuntu | `.deb` from [Releases](https://github.com/ops4life/awsp/releases) | `sudo dpkg -i awsp_<version>_all.deb` |
 | Any | from source | `git clone https://github.com/ops4life/awsp.git && cd awsp && make install` |
 
@@ -36,7 +37,9 @@ must source them. After installing, add the matching line to `~/.bashrc` / `~/.z
 ```
 
 Upgrade with the same tool you installed with (`brew upgrade awsp`, re-run the install
-script, or install the newer `.deb`). Windows is supported through WSL or Git Bash only.
+script, or install the newer `.deb`). On Windows, use the PowerShell installer above (WSL and Git Bash use the POSIX install script).
+If PowerShell blocks your profile, run `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned` once.
+Uninstall with `$env:AWSP_UNINSTALL=1; irm https://raw.githubusercontent.com/ops4life/awsp/main/install.ps1 | iex`.
 
 <details>
 <summary>Plugin managers (zsh)</summary>

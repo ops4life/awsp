@@ -2,6 +2,7 @@
 # Build release artifacts into ./dist:
 #   awsp-<version>.tar.gz         (top-level dir awsp-<version>/)
 #   awsp-<version>.tar.gz.sha256
+#   awsp-<version>.zip            (+ .sha256; Windows/PowerShell files)
 #   awsp_<version>_all.deb
 # Usage: scripts/build-release.sh <version>
 set -eu
@@ -23,6 +24,15 @@ cp "$root/completions/"* "$stage/completions/"
 cp "$root/LICENSE" "$root/README.md" "$stage/"
 tar -C "$work" -czf "$dist/awsp-$version.tar.gz" "awsp-$version"
 (cd "$dist" && sha256sum "awsp-$version.tar.gz" > "awsp-$version.tar.gz.sha256")
+
+# --- zip (Windows / PowerShell) ---
+zstage="$work/zip/awsp-$version"
+mkdir -p "$zstage/bin" "$zstage/completions"
+cp "$root/bin/awsp.ps1" "$root/bin/awsp-profile.ps1" "$zstage/bin/"
+cp "$root/completions/awsp.completion.ps1" "$zstage/completions/"
+cp "$root/LICENSE" "$root/README.md" "$zstage/"
+(cd "$work/zip" && python3 -m zipfile -c "$dist/awsp-$version.zip" "awsp-$version")
+(cd "$dist" && sha256sum "awsp-$version.zip" > "awsp-$version.zip.sha256")
 
 # --- .deb ---
 pkg="$work/deb"

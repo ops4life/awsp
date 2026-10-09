@@ -78,6 +78,67 @@ function _awsp_upgrade {
   Write-Host '  irm https://raw.githubusercontent.com/ops4life/awsp/main/install.ps1 | iex'
 }
 
+# "[profile x]" / "[ x ]" -> "x"; returns $null when the line is not a section header.
+function _awsp_config_section_name([string]$line) {
+  if ($line -match '^\s*\[(.*)\]\s*$') {
+    return ($Matches[1].Trim() -replace '^profile\s+', '').Trim()
+  }
+  return $null
+}
+
+# Emits profile names (one per pipeline item). Callers wrap the call in @().
+function _awsp_list_profiles([bool]$hasAws) {
+  $found = @()
+  if ($hasAws) {
+    $found = @(& aws configure list-profiles 2>$null | ForEach-Object { ([string]$_).Trim() } | Where-Object { $_ })
+  }
+  if ($found.Count -eq 0) {
+    $dir = Join-Path (_awsp_home) '.aws'
+    $names = New-Object System.Collections.Generic.List[string]
+    $cfg = Join-Path $dir 'config'
+    if (Test-Path -LiteralPath $cfg -PathType Leaf) {
+      foreach ($l in [System.IO.File]::ReadAllLines($cfg)) {
+        $n = _awsp_config_section_name $l
+        if ($n) { $names.Add($n) }
+      }
+    }
+    $cred = Join-Path $dir 'credentials'
+    if (Test-Path -LiteralPath $cred -PathType Leaf) {
+      foreach ($l in [System.IO.File]::ReadAllLines($cred)) {
+        if ($l -match '^\s*\[(.*)\]\s*$') {
+          $n = $Matches[1].Trim()
+          if ($n) { $names.Add($n) }
+        }
+      }
+    }
+    $found = @($names | Sort-Object -Unique)
+  }
+  $found
+}
+
+# Numbered picker; returns the chosen name or $null (after printing why).
+function _awsp_pick([string[]]$profiles, [bool]$quiet) {
+  if ($profiles.Count -eq 0) { _awsp_err 'No AWS profiles found.'; return $null }
+  if (-not $quiet) { Write-Host 'Pick an AWS profile:' }
+  for ($i = 0; $i -lt $profiles.Count; $i++) {
+    Write-Host ('{0,2}) {1}' -f ($i + 1), $profiles[$i])
+  }
+  $choice = _awsp_read 'Select number'
+  $n = 0L
+  if (([string]$choice) -notmatch '^\d+$' -or -not [long]::TryParse([string]$choice, [ref]$n) -or $n -lt 1 -or $n -gt $profiles.Count) {
+    Write-Host 'No selection.'
+    return $null
+  }
+  return $profiles[$n - 1]
+}
+
+# Runs `aws <args>` silently; $true when it exits 0.
+function _awsp_aws_quiet([string[]]$a) {
+  $global:LASTEXITCODE = 0
+  & aws @a *> $null
+  return ($LASTEXITCODE -eq 0)
+}
+
 function awsp {
   $ErrorActionPreference = 'Continue'
   $listOnly = $false; $showCurrent = $false; $forceLogin = $false; $unsetOnly = $false
@@ -124,5 +185,61 @@ function awsp {
   if ($unsetOnly) { _awsp_unset $quiet; $global:LASTEXITCODE = 0; return }
   if ($upgrade) { _awsp_upgrade; $global:LASTEXITCODE = 0; return }
 
-  # (profile discovery and switching are added in Task 2)
+  # ---------- collect profiles ----------
+  $hasAws = [bool](Get-Command aws -ErrorAction SilentlyContinue)
+  $profiles = @(_awsp_list_profiles $hasAws)
+  $count = $profiles.Count
+
+  # (add/remove/modify are added in Task 4)
+
+  if ($count -eq 0 -and -not $addProfile) {
+    Write-Host 'No AWS profiles found. Create one with: aws configure sso'
+    $global:LASTEXITCODE = 1; return
+  }
+
+  if ($listOnly) { Write-Output $profiles; $global:LASTEXITCODE = 0; return }
+
+  # ---------- choose profile if not provided ----------
+  if (-not $prof) {
+    $prof = _awsp_pick $profiles $quiet
+    if (-not $prof) { $global:LASTEXITCODE = 1; return }
+  }
+
+  # ---------- set env (avoid static creds override) ----------
+  _awsp_unset $quiet
+  $env:AWS_SDK_LOAD_CONFIG = '1'
+  $env:AWS_PROFILE = $prof
+  $env:AWS_DEFAULT_PROFILE = $prof
+  if (-not $quiet) { Write-Host "-> Switched to $prof" }
+
+  # Save profile for auto-load in future shells (silent)
+  try {
+    $stateDir = _awsp_state_dir
+    New-Item -ItemType Directory -Force -Path $stateDir | Out-Null
+    [System.IO.File]::WriteAllText((Join-Path $stateDir 'current_profile'), "$prof`n")
+  } catch { }
+
+  # ---------- verify / login logic ----------
+  if ($hasAws) {
+    if ($forceLogin) {
+      if (-not $quiet) { Write-Host "Authenticating SSO for $prof..." }
+      if (-not (_awsp_aws_quiet @('sso', 'login', '--profile', $prof))) {
+        Write-Host 'SSO login failed.'; $global:LASTEXITCODE = 1; return
+      }
+    }
+    if ($verify -ne 'off') {
+      if (-not (_awsp_aws_quiet @('sts', 'get-caller-identity'))) {
+        if (-not $quiet) { Write-Host "Authenticating SSO for $prof..." }
+        if (-not (_awsp_aws_quiet @('sso', 'login', '--profile', $prof))) {
+          Write-Host 'SSO login failed.'; $global:LASTEXITCODE = 1; return
+        }
+      }
+      $global:LASTEXITCODE = 0
+      & aws sts get-caller-identity --output $outfmt
+      return
+    }
+  } else {
+    if (-not $quiet) { Write-Host 'Note: aws CLI not found in PATH; env switched but cannot verify.' }
+  }
+  $global:LASTEXITCODE = 0
 }

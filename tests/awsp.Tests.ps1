@@ -120,5 +120,129 @@ Describe '--upgrade' {
   }
 }
 
+Describe 'profile discovery and --list' {
+  It 'uses aws configure list-profiles when the aws CLI is present' {
+    $env:MOCK_AWS_PROFILES = "dev`nprod"
+    $out = awsp --list *>&1 | Out-String
+    $LASTEXITCODE | Should -Be 0
+    $out | Should -Match 'dev'
+    $out | Should -Match 'prod'
+  }
+
+  It 'falls back to parsing config/credentials without the aws CLI' {
+    Remove-Item Function:\aws
+    $env:PATH = Join-Path $script:TestHome 'empty'
+    Write-ConfigProfile -Name 'dev'
+    Write-CredsProfile -Name 'legacy'
+    $out = awsp --list *>&1 | Out-String
+    $LASTEXITCODE | Should -Be 0
+    $out | Should -Match 'dev'
+    $out | Should -Match 'legacy'
+  }
+
+  It 'reports no profiles (exit 1) when ~/.aws does not exist at all' {
+    Remove-Item -LiteralPath (Join-Path $script:TestHome '.aws') -Recurse -Force
+    $out = awsp --list *>&1 | Out-String
+    $LASTEXITCODE | Should -Be 1
+    $out | Should -Match 'No AWS profiles found'
+  }
+
+  It 'reports no profiles when nothing is configured' {
+    $out = awsp --list *>&1 | Out-String
+    $LASTEXITCODE | Should -Be 1
+    $out | Should -Match 'No AWS profiles found'
+  }
+}
+
+Describe 'switching' {
+  BeforeEach { $env:MOCK_AWS_PROFILES = "dev`nprod" }
+
+  It 'sets env vars and persists the profile' {
+    awsp dev --no-verify --quiet *>&1 | Out-Null
+    $LASTEXITCODE | Should -Be 0
+    $env:AWS_PROFILE | Should -Be 'dev'
+    $env:AWS_DEFAULT_PROFILE | Should -Be 'dev'
+    $env:AWS_SDK_LOAD_CONFIG | Should -Be '1'
+    (Get-Content -LiteralPath (Join-Path (_awsp_state_dir) 'current_profile') -Raw).Trim() | Should -Be 'dev'
+  }
+
+  It 'clears static credentials from the environment when switching' {
+    $env:AWS_ACCESS_KEY_ID = 'x'; $env:AWS_SECRET_ACCESS_KEY = 'y'
+    awsp dev --no-verify --quiet *>&1 | Out-Null
+    $env:AWS_ACCESS_KEY_ID | Should -BeNullOrEmpty
+    $env:AWS_SECRET_ACCESS_KEY | Should -BeNullOrEmpty
+  }
+
+  It 'handles profile names with spaces and dots' {
+    $env:MOCK_AWS_PROFILES = "my dev`ndev.1"
+    awsp 'my dev' --no-verify --quiet *>&1 | Out-Null
+    $env:AWS_PROFILE | Should -Be 'my dev'
+    awsp 'dev.1' --no-verify --quiet *>&1 | Out-Null
+    $env:AWS_PROFILE | Should -Be 'dev.1'
+  }
+
+  It 'numbered-list selection switches to the chosen profile' {
+    Set-AwspInput '2'
+    awsp --no-verify --quiet *>&1 | Out-Null
+    $LASTEXITCODE | Should -Be 0
+    $env:AWS_PROFILE | Should -Be 'prod'
+  }
+
+  It 'rejects bad picker input without throwing' {
+    foreach ($bad in '', '0', '3', 'abc', '99999999999999999999', '-1') {
+      Set-AwspInput $bad
+      $out = awsp --no-verify --quiet *>&1 | Out-String
+      $LASTEXITCODE | Should -Be 1
+      $out | Should -Match 'No selection'
+      $env:AWS_PROFILE | Should -BeNullOrEmpty
+    }
+  }
+}
+
+Describe 'verify / login flow' {
+  BeforeEach { $env:MOCK_AWS_PROFILES = 'dev' }
+
+  It '--no-verify skips STS verification' {
+    $env:MOCK_AWS_STS_FAIL = '1'
+    awsp dev --no-verify --quiet *>&1 | Out-Null
+    $LASTEXITCODE | Should -Be 0
+    @(@(Get-Content -LiteralPath $env:MOCK_AWS_LOG -ErrorAction SilentlyContinue) -match '^sts ').Count | Should -Be 0
+  }
+
+  It 'auto-logs in via SSO when the STS identity check fails' {
+    $env:MOCK_AWS_STS_FAIL = '1'
+    awsp dev --quiet *>&1 | Out-Null
+    $LASTEXITCODE | Should -Be 0
+    @(@(Get-Content -LiteralPath $env:MOCK_AWS_LOG) -match '^sso login').Count | Should -BeGreaterThan 0
+  }
+
+  It 'fails with exit 1 when SSO login fails' {
+    $env:MOCK_AWS_STS_FAIL = '1'; $env:MOCK_AWS_SSO_LOGIN_EXIT = '1'
+    $out = awsp dev --quiet *>&1 | Out-String
+    $LASTEXITCODE | Should -Be 1
+    $out | Should -Match 'SSO login failed'
+  }
+
+  It '--login forces aws sso login' {
+    awsp dev --login --no-verify --quiet *>&1 | Out-Null
+    @(@(Get-Content -LiteralPath $env:MOCK_AWS_LOG) -match '^sso login --profile dev$').Count | Should -Be 1
+  }
+
+  It '--json outputs the STS identity as JSON' {
+    $out = awsp dev --quiet --json *>&1 | Out-String
+    $LASTEXITCODE | Should -Be 0
+    $out | Should -Match '"Account"'
+  }
+
+  It 'notes that verification is impossible without the aws CLI' {
+    Remove-Item Function:\aws
+    $env:PATH = Join-Path $script:TestHome 'empty'
+    Write-ConfigProfile -Name 'dev'
+    $out = awsp dev *>&1 | Out-String
+    $env:AWS_PROFILE | Should -Be 'dev'
+    $out | Should -Match 'aws CLI not found'
+  }
+}
+
 # APPEND-TESTS-ABOVE
 }

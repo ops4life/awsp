@@ -34,10 +34,15 @@ description: Overview of the awsp repository file structure
 │   ├── pull_request_template.md   # PR template
 │   └── dependabot.yml             # Dependabot config
 ├── bin/
-│   └── awsp.sh                    # Main shell function
+│   ├── awsp.sh                    # Main shell function
+│   ├── awsp.ps1                   # PowerShell port (Windows)
+│   └── awsp-profile.ps1           # Installer helper for PowerShell profiles
 ├── completions/
 │   ├── awsp.bash                  # Bash completion
-│   └── _awsp.zsh                  # Zsh completion
+│   ├── _awsp.zsh                  # Zsh completion
+│   └── awsp.completion.ps1        # PowerShell completion
+├── install.sh                     # POSIX installer
+├── install.ps1                    # PowerShell installer
 ├── docs/                          # MkDocs documentation source
 │   ├── getting-started/
 │   │   ├── quick-start.md
@@ -79,6 +84,8 @@ description: Overview of the awsp repository file structure
 ### `bin/`
 
 Contains the main `awsp.sh` shell function. This is the core of the application — a single POSIX-compliant shell function that must be **sourced** (not executed) to modify the parent shell's environment.
+
+`awsp.ps1` is the native PowerShell port with the same flags; it is dot-sourced from a PowerShell profile. `awsp-profile.ps1` adds/removes that profile line for the installers.
 
 ### `completions/`
 

@@ -43,6 +43,7 @@ description: Overview of the awsp repository file structure
 │   └── awsp.completion.ps1        # PowerShell completion
 ├── install.sh                     # POSIX installer
 ├── install.ps1                    # PowerShell installer
+├── packaging/                     # Windows packaging (Chocolatey, Inno Setup, winget templates)
 ├── docs/                          # MkDocs documentation source
 │   ├── getting-started/
 │   │   ├── quick-start.md
@@ -86,6 +87,8 @@ description: Overview of the awsp repository file structure
 Contains the main `awsp.sh` shell function. This is the core of the application — a single POSIX-compliant shell function that must be **sourced** (not executed) to modify the parent shell's environment.
 
 `awsp.ps1` is the native PowerShell port with the same flags; it is dot-sourced from a PowerShell profile. `awsp-profile.ps1` adds/removes that profile line for the installers.
+
+`packaging/` holds the Chocolatey package sources, the Inno Setup script used for the winget installer, and winget manifest templates. `scripts/build-windows-packages.ps1` builds them and `scripts/publish-windows-packages.ps1` publishes them (needs the `CHOCO_API_KEY` and `WINGET_PKGS_TOKEN` secrets).
 
 ### `completions/`
 

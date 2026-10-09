@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2015/06/nuspec.xsd">
+  <metadata>
+    <id>awsp</id>
+    <version>0.0.0</version>
+    <title>awsp</title>
+    <authors>ops4life</authors>
+    <owners>ops4life</owners>
+    <projectUrl>https://github.com/ops4life/awsp</projectUrl>
+    <projectSourceUrl>https://github.com/ops4life/awsp</projectSourceUrl>
+    <docsUrl>https://ops4life.github.io/awsp/</docsUrl>
+    <bugTrackerUrl>https://github.com/ops4life/awsp/issues</bugTrackerUrl>
+    <licenseUrl>https://github.com/ops4life/awsp/blob/main/LICENSE</licenseUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <copyright>2026 ops4life</copyright>
+    <tags>aws profile sso switcher powershell cli</tags>
+    <summary>Lightweight AWS profile switcher with SSO auto-login for PowerShell</summary>
+    <description>awsp is a PowerShell function that switches AWS profiles (with SSO auto-login if needed).
+
+It must be loaded from your PowerShell profile. Install with `--params "/Profile"` to add it to the all-users profiles automatically, otherwise the install output shows the line to add to your own profile.</description>
+    <releaseNotes>https://github.com/ops4life/awsp/releases</releaseNotes>
+  </metadata>
+  <files>
+    <file src="tools\**" target="tools" />
+  </files>
+</package>

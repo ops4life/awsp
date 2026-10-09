@@ -75,4 +75,40 @@ Describe 'awsp-profile.ps1' {
     $lines.Count | Should -Be 2
     $lines[0] | Should -Be 'Set-Alias a b'
   }
+
+  It 'preserves a UTF-16LE profile (5.1 "> $PROFILE" style) when adding and removing' {
+    $enc = New-Object System.Text.UnicodeEncoding($false, $true)
+    $orig = 'Write-Host "caf' + [char]0x00E9 + '"'
+    [System.IO.File]::WriteAllText($script:Prof, $orig + [Environment]::NewLine, $enc)
+    & $script:Hook -Action Add -ScriptPath $script:Target -ProfileFile $script:Prof
+    $bytes = [System.IO.File]::ReadAllBytes($script:Prof)
+    $bytes[0..1] | Should -Be @(0xFF, 0xFE)
+    $lines = @(Get-Content -LiteralPath $script:Prof)
+    $lines[0] | Should -Be $orig
+    @($lines | Where-Object { $_ -match '# awsp$' }).Count | Should -Be 1
+    & $script:Hook -Action Remove -ScriptPath $script:Target -ProfileFile $script:Prof
+    ([System.IO.File]::ReadAllBytes($script:Prof))[0..1] | Should -Be @(0xFF, 0xFE)
+    @(Get-Content -LiteralPath $script:Prof) | Should -Be @($orig)
+  }
+
+  It 'keeps a UTF-8 BOM and non-ASCII content when removing' {
+    $enc = New-Object System.Text.UTF8Encoding $true
+    $orig = '# caf' + [char]0x00E9
+    [System.IO.File]::WriteAllText($script:Prof, $orig + [Environment]::NewLine, $enc)
+    & $script:Hook -Action Add -ScriptPath $script:Target -ProfileFile $script:Prof
+    & $script:Hook -Action Remove -ScriptPath $script:Target -ProfileFile $script:Prof
+    ([System.IO.File]::ReadAllBytes($script:Prof))[0..2] | Should -Be @(0xEF, 0xBB, 0xBF)
+    @(Get-Content -LiteralPath $script:Prof) | Should -Be @($orig)
+  }
+
+  It 'targets both PowerShell editions for the current user' {
+    $docs = Join-Path $script:Dir 'Documents'
+    New-Item -ItemType Directory -Force -Path $docs | Out-Null
+    $saved = $env:SystemRoot
+    $env:SystemRoot = $script:Dir
+    try { & $script:Hook -Action Add -ScriptPath $script:Target -DocumentsDir $docs }
+    finally { $env:SystemRoot = $saved }
+    Test-Path (Join-Path $docs 'WindowsPowerShell/profile.ps1') | Should -BeTrue
+    Test-Path (Join-Path $docs 'PowerShell/profile.ps1') | Should -BeTrue
+  }
 }

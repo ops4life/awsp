@@ -22,13 +22,9 @@ function _awsp_complete_words([string]$word) {
   }
 }
 
-# Native-style completer (works for argument positions of plain functions) ...
+# Native-style completer: the only registration that works for a plain function's arguments
+# (a second, non-native registration would shadow it and receive the wrong arguments).
 Register-ArgumentCompleter -Native -CommandName awsp -ScriptBlock {
   param($wordToComplete, $commandAst, $cursorPosition)
-  _awsp_complete_words $wordToComplete
-}
-# ... and the regular one.
-Register-ArgumentCompleter -CommandName awsp -ScriptBlock {
-  param($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameter)
   _awsp_complete_words $wordToComplete
 }

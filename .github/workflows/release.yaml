@@ -9,6 +9,9 @@ jobs:
   release:
     name: Release
     runs-on: ubuntu-24.04
+    outputs:
+      published: ${{ steps.release.outputs.new_release_published }}
+      version: ${{ steps.release.outputs.new_release_version }}
     env:
       HOMEBREW_TAP_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
     steps:
@@ -43,3 +46,37 @@ jobs:
       - name: Bump Homebrew tap
         if: steps.release.outputs.new_release_published == 'true' && env.HOMEBREW_TAP_TOKEN != ''
         run: scripts/bump-tap.sh "${{ steps.release.outputs.new_release_version }}"
+
+  windows-packages:
+    name: Windows packages
+    needs: release
+    if: needs.release.outputs.published == 'true'
+    runs-on: windows-latest
+    env:
+      CHOCO_API_KEY: ${{ secrets.CHOCO_API_KEY }}
+      WINGET_PKGS_TOKEN: ${{ secrets.WINGET_PKGS_TOKEN }}
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      VERSION: ${{ needs.release.outputs.version }}
+    steps:
+      - name: Checkout release tag
+        uses: actions/checkout@v7
+        with:
+          ref: v${{ needs.release.outputs.version }}
+          persist-credentials: false
+
+      - name: Install Inno Setup
+        shell: pwsh
+        run: choco install innosetup -y --no-progress
+
+      - name: Build packages
+        shell: pwsh
+        run: scripts/build-windows-packages.ps1 -Version $env:VERSION
+
+      - name: Upload to the release
+        shell: pwsh
+        run: |
+          gh release upload "v$env:VERSION" "dist/awsp.$env:VERSION.nupkg" "dist/awsp-$env:VERSION-setup.exe" "dist/awsp-$env:VERSION-setup.exe.sha256" --clobber --repo $env:GITHUB_REPOSITORY
+
+      - name: Publish (Chocolatey, winget)
+        shell: pwsh
+        run: scripts/publish-windows-packages.ps1 -Version $env:VERSION -Dir dist

@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 `awsp` is a lightweight, cross-shell AWS profile switcher with SSO auto-login support. It's implemented as a pure POSIX shell function (not a binary) and works in both Bash and Zsh without external dependencies like `fzf`.
 
-A native PowerShell port (`bin/awsp.ps1`, `bin/awsp-profile.ps1`, `completions/awsp.completion.ps1`, `install.ps1`) provides the same flags on Windows. Keep it in sync with `bin/awsp.sh`: the Pester parity tests (`tests/awsp.Tests.ps1`) check the version and the flag list. Run them with Pester 5 (`Invoke-Pester ./tests`).
+A native PowerShell port (`bin/awsp.ps1`, `bin/awsp-profile.ps1`, `completions/awsp.completion.ps1`, `install.ps1`) provides the same flags on Windows. Keep it in sync with `bin/awsp.sh`: the Pester parity tests (`tests/awsp.Tests.ps1`) check the version and the flag list. Run them with Pester 5 (`Invoke-Pester ./tests`). Windows packaging lives in `packaging/` (Chocolatey, Inno Setup for winget, winget manifest templates) and is built by `scripts/build-windows-packages.ps1`; `release.yaml` publishes it when the repo secrets `CHOCO_API_KEY` and `WINGET_PKGS_TOKEN` exist (missing secrets are skipped).
 
 ## Core Architecture
 

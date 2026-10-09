@@ -512,5 +512,19 @@ Describe 'parity with awsp.sh' {
   }
 }
 
+Describe 'completion through the real completion engine' {
+  It 'completes flags and profile names via TabExpansion2' {
+    Write-ConfigProfile -Name 'prodx'
+    $hostExe = (Get-Process -Id $PID).Path
+    $cmd = ". '$($script:AwspPs1)'; " +
+      "(TabExpansion2 'awsp --j' 8).CompletionMatches.CompletionText -join ','; " +
+      "(TabExpansion2 'awsp pro' 8).CompletionMatches.CompletionText -join ','"
+    $env:PATH = Join-Path $script:TestHome 'empty'
+    $out = @(& $hostExe -NoProfile -Command $cmd)
+    $out[0] | Should -Be '--json'
+    $out[1] | Should -Match 'prodx'
+  }
+}
+
 # APPEND-TESTS-ABOVE
 }

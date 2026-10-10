@@ -303,3 +303,22 @@ write_creds_profile() {
   [[ "$output" == *"brew upgrade awsp"* ]]
   [ ! -d "$HOME/opt/awsp/share/awsp.backup" ]
 }
+
+@test "every flag the parser accepts is listed in --help, docs and completions" {
+  ROOT="$(cd "$(dirname "$BATS_TEST_FILENAME")/.." && pwd)"
+  source "$AWSP_SH"
+  # Source of truth: the option patterns in the arg-parsing case block.
+  flags="$(sed -n '/# ---------- parse args/,/# ---------- helpers/p' "$AWSP_SH" \
+    | grep -E '^ +-[^ )]*\)' | grep -oE -e '--?[a-zA-Z][a-zA-Z-]*')"
+  [ -n "$flags" ]
+  missing=""
+  for f in $flags; do
+    awsp --help | grep -qE -e "(^|[ ,])$f( |,|$)" || missing="$missing $f:--help"
+    for file in README.md docs/getting-started/usage.md \
+        completions/awsp.bash completions/_awsp.zsh completions/awsp.completion.ps1 \
+        bin/awsp.ps1; do
+      grep -qE -e "(^|[^a-zA-Z-])$f([^a-zA-Z-]|$)" "$ROOT/$file" || missing="$missing $f:$file"
+    done
+  done
+  [ -z "$missing" ] || { echo "flags missing from:$missing"; false; }
+}

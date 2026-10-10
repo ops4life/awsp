@@ -303,3 +303,19 @@ write_creds_profile() {
   [[ "$output" == *"brew upgrade awsp"* ]]
   [ ! -d "$HOME/opt/awsp/share/awsp.backup" ]
 }
+
+@test "every flag in --help is listed in docs and completions" {
+  ROOT="$(cd "$(dirname "$BATS_TEST_FILENAME")/.." && pwd)"
+  source "$AWSP_SH"
+  flags="$(awsp --help | grep -oE '^ +(-[a-zA-Z],? ?)?--?[a-zA-Z-]+' | grep -oE -e '--?[a-zA-Z-]+')"
+  [ -n "$flags" ]
+  missing=""
+  for f in $flags; do
+    for file in README.md docs/getting-started/usage.md \
+        completions/awsp.bash completions/_awsp.zsh completions/awsp.completion.ps1 \
+        bin/awsp.ps1; do
+      grep -qF -e "$f" "$ROOT/$file" || missing="$missing $f:$file"
+    done
+  done
+  [ -z "$missing" ] || { echo "flags missing from:$missing"; false; }
+}

@@ -19,6 +19,9 @@ Options:
   -c, --current      Print current AWS profile and exit
   -u, --unset        Unset AWS profile & static creds and exit
   -U, --upgrade      Upgrade awsp to latest version
+  -a, --add          Add a new profile (SSO or static credentials) and switch to it
+  -r, --remove       Remove a profile (prompts for selection if omitted)
+  -m, --modify       Modify/reconfigure an existing profile (prompts if omitted)
   -L, --login        Force "aws sso login" for the selected/current profile
   -v, --verify       Verify identity via STS (default: auto)
       --no-verify    Do not verify identity

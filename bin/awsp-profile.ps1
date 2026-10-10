@@ -1,5 +1,5 @@
 # Adds/removes the line that loads awsp from PowerShell profile files.
-# Shared by install.ps1, the Inno Setup (winget) installer and the Chocolatey package.
+# Shared by install.ps1, the Inno Setup installer and the Chocolatey package.
 # ASCII-only source (Windows PowerShell 5.1 reads BOM-less files as ANSI).
 param(
   [Parameter(Mandatory)][ValidateSet('Add', 'Remove')][string]$Action,

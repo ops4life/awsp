@@ -64,8 +64,8 @@ function _awsp_upgrade {
     Write-Host 'awsp was installed with Chocolatey; upgrade with: choco upgrade awsp'
     return
   }
-  if ($dir -match '(?i)[\\/](WinGet[\\/]|Programs[\\/]awsp)') {
-    Write-Host 'awsp was installed with winget; upgrade with: winget upgrade ops4life.awsp'
+  if ($dir -match '(?i)[\\/]Programs[\\/]awsp') {
+    Write-Host 'awsp was installed with the setup installer; download the latest awsp-<version>-setup.exe from https://github.com/ops4life/awsp/releases'
     return
   }
   $root = ''

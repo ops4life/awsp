@@ -3,11 +3,12 @@
   <metadata>
     <id>awsp</id>
     <version>0.0.0</version>
-    <title>awsp</title>
+    <title>awsp - AWS Profile Switcher</title>
     <authors>ops4life</authors>
     <owners>ops4life</owners>
     <projectUrl>https://github.com/ops4life/awsp</projectUrl>
-    <projectSourceUrl>https://github.com/ops4life/awsp</projectSourceUrl>
+    <packageSourceUrl>https://github.com/ops4life/awsp/tree/main/packaging/chocolatey</packageSourceUrl>
+    <iconUrl>https://raw.githubusercontent.com/ops4life/awsp/main/awsp.png</iconUrl>
     <docsUrl>https://ops4life.github.io/awsp/</docsUrl>
     <bugTrackerUrl>https://github.com/ops4life/awsp/issues</bugTrackerUrl>
     <licenseUrl>https://github.com/ops4life/awsp/blob/main/LICENSE</licenseUrl>

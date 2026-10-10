@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.11.2](https://github.com/ops4life/awsp/compare/v1.11.1...v1.11.2) (2026-10-10)
+
+
+### Bug Fixes
+
+* publish Windows packages independently and guard flag docs ([#63](https://github.com/ops4life/awsp/issues/63)) ([1d65eb2](https://github.com/ops4life/awsp/commit/1d65eb291e55f7f90889679d1075ce7127dabbef))
+
 ## [1.11.1](https://github.com/ops4life/awsp/compare/v1.11.0...v1.11.1) (2026-10-10)
 
 

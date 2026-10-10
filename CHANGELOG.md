@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.11.1](https://github.com/ops4life/awsp/compare/v1.11.0...v1.11.1) (2026-10-10)
+
+
+### Bug Fixes
+
+* list all flags in README and bash completion ([#60](https://github.com/ops4life/awsp/issues/60)) ([b973e5b](https://github.com/ops4life/awsp/commit/b973e5b3d9fe6a80cdd39ee2e7cbe5e2a1dc879e))
+
 # [1.11.0](https://github.com/ops4life/awsp/compare/v1.10.0...v1.11.0) (2026-10-09)
 
 

@@ -102,10 +102,10 @@ Describe '--upgrade' {
     $out | Should -Match 'choco upgrade awsp'
   }
 
-  It 'defers to winget for installer-based copies' {
+  It 'points installer-based copies at the releases page' {
     $global:_AWSP_SCRIPT = Join-Path $script:TestHome 'AppData/Local/Programs/awsp/awsp.ps1'
     $out = awsp -U *>&1 | Out-String
-    $out | Should -Match 'winget upgrade ops4life.awsp'
+    $out | Should -Match 'awsp-<version>-setup\.exe'
   }
 
   It 'tells script-install users to re-run install.ps1' {

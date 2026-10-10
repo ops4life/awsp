@@ -12,7 +12,6 @@ jobs:
     runs-on: windows-latest
     env:
       CHOCO_API_KEY: ${{ secrets.CHOCO_API_KEY }}
-      WINGET_PKGS_TOKEN: ${{ secrets.WINGET_PKGS_TOKEN }}
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       INPUT_VERSION: ${{ inputs.version }}
     steps:

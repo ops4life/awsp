@@ -23,7 +23,7 @@ jobs:
       - name: Run test suite
         run: |
           set -o pipefail
-          bats --formatter tap tests/awsp.bats | tee bats-output.tap
+          bats --formatter tap tests/awsp.bats tests/install.bats | tee bats-output.tap
 
       - name: Publish test report to job summary
         if: always()

@@ -10,6 +10,7 @@
 #   AWSP_ARCHIVE       local zip to install instead of downloading (testing)
 #   AWSP_PROFILE_FILE  profile file to edit instead of the default ones (testing)
 #   AWSP_UNINSTALL=1   remove awsp instead of installing it
+#   AWSP_SKIP_PREFLIGHT=1  skip the environment checks
 # ASCII-only source: Windows PowerShell 5.1 reads BOM-less files as ANSI.
 
 & {
@@ -43,6 +44,26 @@
     return
   }
 
+  if ($env:AWSP_SKIP_PREFLIGHT -ne '1') {
+    Write-Host '-> Preflight checks...'
+    if ($PSVersionTable.PSVersion -lt [version]'5.1') { Die "PowerShell $($PSVersionTable.PSVersion) is too old; 5.1 or newer is required" }
+    Write-Host "  OK   PowerShell $($PSVersionTable.PSVersion)"
+    $awsCmd = Get-Command aws -ErrorAction SilentlyContinue
+    if (-not $awsCmd) {
+      Write-Host '  WARN AWS CLI not found; SSO features require AWS CLI v2 (https://aws.amazon.com/cli/).'
+    } elseif ((& $awsCmd.Source --version 2>&1 | Out-String) -match '^aws-cli/2\.') {
+      Write-Host '  OK   AWS CLI v2'
+    } else {
+      Write-Host '  WARN AWS CLI is not v2; SSO features require v2 (https://aws.amazon.com/cli/).'
+    }
+    $awsDir = Join-Path $userHome '.aws'
+    if ((Test-Path -LiteralPath (Join-Path $awsDir 'config')) -or (Test-Path -LiteralPath (Join-Path $awsDir 'credentials'))) {
+      Write-Host '  OK   AWS profile files'
+    } else {
+      Write-Host '  WARN no .aws\config or .aws\credentials yet; add a profile (aws configure sso).'
+    }
+  }
+
   $tmp = Join-Path ([System.IO.Path]::GetTempPath()) ('awsp-' + [guid]::NewGuid().ToString('N'))
   New-Item -ItemType Directory -Force -Path $tmp | Out-Null
   try {
@@ -71,10 +92,6 @@
     Expand-Archive -LiteralPath $zip -DestinationPath $extract -Force
     $src = Get-ChildItem -LiteralPath $extract -Directory -Filter 'awsp-*' | Select-Object -First 1
     if (-not $src -or -not (Test-Path -LiteralPath (Join-Path $src.FullName 'bin/awsp.ps1'))) { Die 'unexpected archive layout' }
-
-    if (-not (Get-Command aws -ErrorAction SilentlyContinue)) {
-      Write-Host 'WARNING: AWS CLI not found in PATH; SSO features require AWS CLI v2 (https://aws.amazon.com/cli/).'
-    }
 
     New-Item -ItemType Directory -Force -Path (Join-Path $prefix 'completions') | Out-Null
     Copy-Item -LiteralPath (Join-Path $src.FullName 'bin/awsp.ps1') -Destination $prefix -Force

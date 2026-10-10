@@ -37,6 +37,8 @@ must source them. After installing, add the matching line to `~/.bashrc` / `~/.z
 [ -f /usr/share/awsp/awsp.sh ] && . /usr/share/awsp/awsp.sh
 ```
 
+The install script, `make install` and `install.ps1` run preflight checks first (shell, required tools, AWS CLI v2, AWS profile files). Missing tools abort the install; a missing AWS CLI or profile only warns. Set `AWSP_SKIP_PREFLIGHT=1` to skip them.
+
 Upgrade with the same tool you installed with (`brew upgrade awsp`, re-run the install
 script, or install the newer `.deb`). On Windows, use the PowerShell installer above (WSL and Git Bash use the POSIX install script).
 The Chocolatey package leaves your profile alone unless you pass `/Profile` (it then edits the all-users PowerShell profiles); otherwise add `. "$env:ChocolateyInstall\lib\awsp\tools\awsp.ps1"` to your `$PROFILE`.

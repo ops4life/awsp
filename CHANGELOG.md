@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.11.3](https://github.com/ops4life/awsp/compare/v1.11.2...v1.11.3) (2026-10-10)
+
+
+### Bug Fixes
+
+* remove winget packaging ([#64](https://github.com/ops4life/awsp/issues/64)) ([608e94d](https://github.com/ops4life/awsp/commit/608e94d730e78ad21b7af76e70d6ea72e3df7ed5))
+
 ## [1.11.2](https://github.com/ops4life/awsp/compare/v1.11.1...v1.11.2) (2026-10-10)
 
 

@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.13.1](https://github.com/ops4life/awsp/compare/v1.13.0...v1.13.1) (2026-10-11)
+
+
+### Bug Fixes
+
+* release the Windows publish handling of pending Chocolatey and winget states ([#67](https://github.com/ops4life/awsp/issues/67)) ([4dfbdc2](https://github.com/ops4life/awsp/commit/4dfbdc237f6aa433e3abfe3261b5c74551b813e6))
+
 # [1.13.0](https://github.com/ops4life/awsp/compare/v1.12.0...v1.13.0) (2026-10-11)
 
 

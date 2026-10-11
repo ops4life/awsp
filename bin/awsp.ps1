@@ -2,7 +2,7 @@
 # Dot-source this file from your PowerShell profile (the installers add the line for you).
 # Keep this file ASCII-only: Windows PowerShell 5.1 reads BOM-less files as ANSI.
 
-$global:AWSP_VERSION = "1.12.0"
+$global:AWSP_VERSION = "1.13.0"
 $global:_AWSP_SCRIPT = $PSCommandPath
 
 function _awsp_home {

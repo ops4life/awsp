@@ -1,11 +1,12 @@
 # Builds Windows packages into -OutDir (default ./dist):
 #   awsp.<version>.nupkg                  Chocolatey package (needs choco)
-#   awsp-<version>-setup.exe (+ .sha256)  Inno Setup installer (needs ISCC)
-# Usage: scripts/build-windows-packages.ps1 -Version 1.9.0 [-OutDir dist] [-Only chocolatey|inno]
+#   awsp-<version>-setup.exe (+ .sha256)  Inno Setup installer for winget (needs ISCC)
+#   winget/*.yaml                         winget manifests rendered for this version
+# Usage: scripts/build-windows-packages.ps1 -Version 1.9.0 [-OutDir dist] [-Only chocolatey|inno|winget]
 param(
   [Parameter(Mandatory)][string]$Version,
   [string]$OutDir = (Join-Path (Split-Path -Parent $PSScriptRoot) 'dist'),
-  [ValidateSet('all', 'chocolatey', 'inno')][string]$Only = 'all',
+  [ValidateSet('all', 'chocolatey', 'inno', 'winget')][string]$Only = 'all',
   [string]$InstallerSha256
 )
 $ErrorActionPreference = 'Stop'
@@ -41,6 +42,16 @@ try {
     $exe = Join-Path $OutDir "awsp-$Version-setup.exe"
     $InstallerSha256 = (Get-FileHash -LiteralPath $exe -Algorithm SHA256).Hash
     Set-Content -NoNewline -Encoding ASCII -LiteralPath "$exe.sha256" -Value ("$InstallerSha256  " + (Split-Path -Leaf $exe) + "`n")
+  }
+
+  if ($Only -in 'all', 'winget') {
+    if (-not $InstallerSha256) { throw 'winget manifests need the installer hash (-InstallerSha256, or build inno first)' }
+    $wdir = Join-Path $OutDir 'winget'
+    New-Item -ItemType Directory -Force -Path $wdir | Out-Null
+    foreach ($f in Get-ChildItem (Join-Path $root 'packaging/winget') -Filter '*.yaml') {
+      (Get-Content -Raw $f.FullName).Replace('__VERSION__', $Version).Replace('__SHA256__', $InstallerSha256) |
+        Set-Content -NoNewline -Encoding UTF8 (Join-Path $wdir $f.Name)
+    }
   }
 } finally {
   Remove-Item -LiteralPath $work -Recurse -Force -ErrorAction SilentlyContinue

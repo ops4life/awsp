@@ -51,4 +51,8 @@ if ($env:WINGET_PKGS_TOKEN) {
   Write-Host '::notice::WINGET_PKGS_TOKEN not set; skipping winget submission'
 }
 
+# The Actions pwsh shell ends every step with `exit $LASTEXITCODE`; without this, the exit code
+# of a native command whose failure was handled above (as a warning) would still fail the step.
+$global:LASTEXITCODE = 0
+
 if ($failures.Count -gt 0) { throw "Publish failed for: $($failures -join ', ')" }

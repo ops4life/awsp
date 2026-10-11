@@ -2,7 +2,7 @@
 # shellcheck shell=sh
 # Source this file from your shell (installer will add it to your rc).
 
-AWSP_VERSION="1.11.3"
+AWSP_VERSION="1.12.0"
 
 # Remember where this file lives (only knowable at source time, not inside functions in zsh)
 if [ -n "${BASH_VERSION-}" ]; then

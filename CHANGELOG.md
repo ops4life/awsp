@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+# [1.12.0](https://github.com/ops4life/awsp/compare/v1.11.3...v1.12.0) (2026-10-11)
+
+
+### Features
+
+* add preflight checks to the installers ([#65](https://github.com/ops4life/awsp/issues/65)) ([cd78122](https://github.com/ops4life/awsp/commit/cd78122da844bf1535ee9339e7b13c1088bab2ab))
+
 ## [1.11.3](https://github.com/ops4life/awsp/compare/v1.11.2...v1.11.3) (2026-10-10)
 
 

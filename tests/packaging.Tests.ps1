@@ -43,6 +43,25 @@ Describe 'Chocolatey package' {
   }
 }
 
+Describe 'winget manifests' {
+  It 'templates carry the package identifier and placeholders' {
+    foreach ($f in 'ops4life.awsp.yaml', 'ops4life.awsp.installer.yaml', 'ops4life.awsp.locale.en-US.yaml') {
+      $t = Get-Content -Raw (Join-Path $script:Repo "packaging/winget/$f")
+      $t | Should -Match 'PackageIdentifier: ops4life\.awsp'
+      $t | Should -Match '__VERSION__'
+    }
+    (Get-Content -Raw (Join-Path $script:Repo 'packaging/winget/ops4life.awsp.installer.yaml')) | Should -Match '__SHA256__'
+  }
+
+  It 'renders manifests with a version and hash' {
+    & $script:Build -Version 0.0.1 -OutDir $script:Out -Only winget -InstallerSha256 ('AB' * 32)
+    $inst = Get-Content -Raw (Join-Path $script:Out 'winget/ops4life.awsp.installer.yaml')
+    $inst | Should -Match 'PackageVersion: 0\.0\.1'
+    $inst | Should -Match ('AB' * 32)
+    $inst | Should -Not -Match '__(VERSION|SHA256)__'
+  }
+}
+
 Describe 'Inno Setup installer' {
   It 'builds, silently installs, loads in PowerShell, and uninstalls cleanly' -Skip:(-not $hasIscc) {
     & $script:Build -Version 0.0.1 -OutDir $script:Out -Only inno

@@ -54,6 +54,7 @@ jobs:
     runs-on: windows
     env:
       CHOCO_API_KEY: ${{ secrets.CHOCO_API_KEY }}
+      WINGET_PKGS_TOKEN: ${{ secrets.WINGET_PKGS_TOKEN }}
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       VERSION: ${{ needs.release.outputs.version }}
     steps:
@@ -76,6 +77,6 @@ jobs:
         run: |
           gh release upload "v$env:VERSION" "dist/awsp.$env:VERSION.nupkg" "dist/awsp-$env:VERSION-setup.exe" "dist/awsp-$env:VERSION-setup.exe.sha256" --clobber --repo $env:GITHUB_REPOSITORY
 
-      - name: Publish to Chocolatey
+      - name: Publish (Chocolatey, winget)
         shell: pwsh
         run: scripts/publish-windows-packages.ps1 -Version $env:VERSION -Dir dist

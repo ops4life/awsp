@@ -1,4 +1,4 @@
-; Inno Setup script for the Windows installer. Build: ISCC /DAppVersion=1.9.0 packaging\windows\awsp.iss
+; Inno Setup script for the winget package. Build: ISCC /DAppVersion=1.9.0 packaging\windows\awsp.iss
 #ifndef AppVersion
   #error AppVersion is not defined (pass /DAppVersion=x.y.z)
 #endif

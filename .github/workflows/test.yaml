@@ -66,7 +66,7 @@ jobs:
 
   pester:
     name: pester (${{ matrix.shell }})
-    runs-on: windows-latest
+    runs-on: windows
     strategy:
       fail-fast: false
       matrix:
@@ -94,7 +94,7 @@ jobs:
 
   psscriptanalyzer:
     name: psscriptanalyzer
-    runs-on: windows-latest
+    runs-on: windows
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v7
@@ -115,7 +115,7 @@ jobs:
 
   windows-packages:
     name: windows packages
-    runs-on: windows-latest
+    runs-on: windows
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v7

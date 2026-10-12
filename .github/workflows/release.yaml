@@ -51,7 +51,7 @@ jobs:
     name: Windows packages
     needs: release
     if: needs.release.outputs.published == 'true'
-    runs-on: windows
+    runs-on: windows-latest
     env:
       CHOCO_API_KEY: ${{ secrets.CHOCO_API_KEY }}
       WINGET_PKGS_TOKEN: ${{ secrets.WINGET_PKGS_TOKEN }}

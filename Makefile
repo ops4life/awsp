@@ -31,7 +31,9 @@ install:
 	done
 	@echo "Installed to $(PREFIX)."
 	@echo "Added source line to: $(RC_FILES)"
-	@echo 'Reload your shell or run: . "$(PREFIX)/awsp.sh"'
+	@echo 'Reload your shell or copy and paste this line:'
+	@echo
+	@echo '  $(SRC_LINE)'
 
 uninstall:
 	@set -eu

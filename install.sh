@@ -124,4 +124,6 @@ done
 
 echo "✓ Installed to $PREFIX"
 echo "  Source line added to:$rcs"
-echo "  Reload your shell or run: . \"$PREFIX/awsp.sh\""
+echo "  Reload your shell or copy and paste this line:"
+echo
+echo "    $src_line"

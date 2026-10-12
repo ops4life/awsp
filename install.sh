@@ -127,3 +127,7 @@ echo "  Source line added to:$rcs"
 echo "  Reload your shell or copy and paste this line:"
 echo
 echo "    $src_line"
+echo
+echo "  To append it to an rc file manually:"
+echo
+echo "    echo '$src_line' >> ~/.${SHELL##*/}rc"

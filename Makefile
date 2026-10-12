@@ -34,6 +34,10 @@ install:
 	@echo 'Reload your shell or copy and paste this line:'
 	@echo
 	@echo '  $(SRC_LINE)'
+	@echo
+	@echo 'To append it to an rc file manually:'
+	@echo
+	@echo "  echo '$(SRC_LINE)' >> ~/.$$(basename "$$SHELL")rc"
 
 uninstall:
 	@set -eu

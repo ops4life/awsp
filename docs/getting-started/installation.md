@@ -5,8 +5,8 @@
 | macOS / Linux | [Homebrew](https://brew.sh/) | `brew tap ops4life/awsp && brew trust ops4life/awsp && brew install awsp` |
 | macOS / Linux / WSL | install script | `curl -fsSL https://raw.githubusercontent.com/ops4life/awsp/main/install.sh \| sh` |
 | Windows (PowerShell) | install script | `irm https://raw.githubusercontent.com/ops4life/awsp/main/install.ps1 \| iex` |
-| Windows | [Chocolatey](https://chocolatey.org/) (from the next release) | `choco install awsp --params "/Profile"` |
-| Windows | [winget](https://learn.microsoft.com/windows/package-manager/) (from the next release) | `winget install ops4life.awsp` |
+| Windows | [Chocolatey](https://chocolatey.org/) | `choco install awsp --params "/Profile"` |
+| Windows | [winget](https://learn.microsoft.com/windows/package-manager/) | `winget install ops4life.awsp` |
 | Debian / Ubuntu | `.deb` from [Releases](https://github.com/ops4life/awsp/releases) | `sudo dpkg -i awsp_<version>_all.deb` |
 | Any | from source | `git clone https://github.com/ops4life/awsp.git && cd awsp && make install` |
 

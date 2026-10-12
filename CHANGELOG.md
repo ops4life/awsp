@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.13.2](https://github.com/ops4life/awsp/compare/v1.13.1...v1.13.2) (2026-10-12)
+
+
+### Bug Fixes
+
+* **docs:** drop 'from the next release' note for Windows packages ([#69](https://github.com/ops4life/awsp/issues/69)) ([b62c3bf](https://github.com/ops4life/awsp/commit/b62c3bfacce8aa78c4b61fd87b74043875e2d4d6))
+
 ## [1.13.1](https://github.com/ops4life/awsp/compare/v1.13.0...v1.13.1) (2026-10-11)
 
 

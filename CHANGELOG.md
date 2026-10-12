@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.13.4](https://github.com/ops4life/awsp/compare/v1.13.3...v1.13.4) (2026-10-12)
+
+
+### Bug Fixes
+
+* print full append command after install ([#71](https://github.com/ops4life/awsp/issues/71)) ([17a0087](https://github.com/ops4life/awsp/commit/17a008718a43be015b3ab01f5d916ae623095f1c))
+
 ## [1.13.3](https://github.com/ops4life/awsp/compare/v1.13.2...v1.13.3) (2026-10-12)
 
 

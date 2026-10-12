@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.13.3](https://github.com/ops4life/awsp/compare/v1.13.2...v1.13.3) (2026-10-12)
+
+
+### Bug Fixes
+
+* print full source line after install ([#70](https://github.com/ops4life/awsp/issues/70)) ([c7de8af](https://github.com/ops4life/awsp/commit/c7de8af3f561a88a0bc6653478261fd7cc16317c))
+
 ## [1.13.2](https://github.com/ops4life/awsp/compare/v1.13.1...v1.13.2) (2026-10-12)
 
 

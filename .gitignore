@@ -97,6 +97,3 @@ gitleaks-report.txt
 *.swo
 *~.nib
 .lock-wscript
-
-# Build output
-dist/

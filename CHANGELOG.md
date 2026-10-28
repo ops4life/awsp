@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.13.5](https://github.com/ops4life/awsp/compare/v1.13.4...v1.13.5) (2026-10-28)
+
+
+### Bug Fixes
+
+* **ci:** bump semantic_version to 24 ([#79](https://github.com/ops4life/awsp/issues/79)) ([6c3c341](https://github.com/ops4life/awsp/commit/6c3c341c546975f373a575789fbacb2d1d80b303))
+* **ci:** fall back to free gitleaks CLI when license secret is unavailable ([#77](https://github.com/ops4life/awsp/issues/77)) ([f66bb11](https://github.com/ops4life/awsp/commit/f66bb11b7847441d815e5c972f95875ea16757da))
+
 ## [1.13.4](https://github.com/ops4life/awsp/compare/v1.13.3...v1.13.4) (2026-10-12)
 
 

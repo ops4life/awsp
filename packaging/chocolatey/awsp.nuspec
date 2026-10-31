@@ -8,7 +8,7 @@
     <owners>ops4life</owners>
     <projectUrl>https://github.com/ops4life/awsp</projectUrl>
     <packageSourceUrl>https://github.com/ops4life/awsp/tree/main/packaging/chocolatey</packageSourceUrl>
-    <iconUrl>https://raw.githubusercontent.com/ops4life/awsp/main/awsp.png</iconUrl>
+    <iconUrl>https://cdn.jsdelivr.net/gh/ops4life/awsp@d5743f9125c75b25a88c0cf3d122e5e43aae353d/awsp.png</iconUrl>
     <docsUrl>https://ops4life.github.io/awsp/</docsUrl>
     <bugTrackerUrl>https://github.com/ops4life/awsp/issues</bugTrackerUrl>
     <licenseUrl>https://github.com/ops4life/awsp/blob/main/LICENSE</licenseUrl>

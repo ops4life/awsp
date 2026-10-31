@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.13.6](https://github.com/ops4life/awsp/compare/v1.13.5...v1.13.6) (2026-10-31)
+
+
+### Bug Fixes
+
+* **chocolatey:** use commit-pinned jsDelivr iconUrl ([#81](https://github.com/ops4life/awsp/issues/81)) ([49820c7](https://github.com/ops4life/awsp/commit/49820c738d8f577b71429cb0ac7d414783aa842c))
+
 ## [1.13.5](https://github.com/ops4life/awsp/compare/v1.13.4...v1.13.5) (2026-10-28)
 
 

@@ -20,9 +20,10 @@ try {
     $stage = Join-Path $work 'choco'
     Copy-Item -Recurse (Join-Path $root 'packaging/chocolatey') $stage
     $tools = Join-Path $stage 'tools'
-    New-Item -ItemType Directory -Force -Path (Join-Path $tools 'completions') | Out-Null
-    Copy-Item (Join-Path $root 'bin/awsp.ps1'), (Join-Path $root 'bin/awsp-profile.ps1') $tools
-    Copy-Item (Join-Path $root 'completions/awsp.completion.ps1') (Join-Path $tools 'completions')
+    # Chocolatey flags packages with more than 3 scripts: ship awsp.ps1 with the completion appended,
+    # and leave awsp-profile.ps1 out (the install/uninstall scripts edit the profiles themselves).
+    Copy-Item (Join-Path $root 'bin/awsp.ps1') $tools
+    Add-Content -Encoding UTF8 (Join-Path $tools 'awsp.ps1') ("`n" + (Get-Content -Raw (Join-Path $root 'completions/awsp.completion.ps1')))
     $nuspec = Join-Path $stage 'awsp.nuspec'
     (Get-Content -Raw $nuspec) -replace '<version>[^<]*</version>', "<version>$Version</version>" |
       Set-Content -NoNewline -Encoding UTF8 $nuspec

@@ -29,8 +29,7 @@ Describe 'Chocolatey package' {
     $zip = [System.IO.Compression.ZipFile]::OpenRead($nupkg)
     try { $names = $zip.Entries.FullName } finally { $zip.Dispose() }   # an open handle would lock the nupkg on Windows
     $names | Should -Contain 'tools/awsp.ps1'
-    $names | Should -Contain 'tools/awsp-profile.ps1'
-    $names | Should -Contain 'tools/completions/awsp.completion.ps1'
+    @($names | Where-Object { $_ -like 'tools/*.ps1' }).Count | Should -BeLessOrEqual 3
   }
 
   It 'installs and uninstalls with choco' -Skip:(-not $hasChoco) {

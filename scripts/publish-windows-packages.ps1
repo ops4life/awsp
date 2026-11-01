@@ -35,7 +35,9 @@ if ($env:WINGET_PKGS_TOKEN) {
     $wc = Join-Path ([System.IO.Path]::GetTempPath()) 'wingetcreate.exe'
     Invoke-WebRequest -UseBasicParsing -Uri 'https://aka.ms/wingetcreate/latest' -OutFile $wc
     $url = "https://github.com/ops4life/awsp/releases/download/v$Version/awsp-$Version-setup.exe"
-    $out = & $wc update ops4life.awsp --version $Version --urls $url --submit --token $env:WINGET_PKGS_TOKEN 2>&1 |
+    # wingetcreate reads the token from this variable; --token would put it on the command line.
+    $env:WINGET_CREATE_GITHUB_TOKEN = $env:WINGET_PKGS_TOKEN
+    $out = & $wc update ops4life.awsp --version $Version --urls $url --submit 2>&1 |
       ForEach-Object { Write-Host $_; $_ }
     if ($LASTEXITCODE -ne 0) {
       # `update` can only bump a package that already exists in microsoft/winget-pkgs.

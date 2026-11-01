@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.13.7](https://github.com/ops4life/awsp/compare/v1.13.6...v1.13.7) (2026-11-01)
+
+
+### Bug Fixes
+
+* **chocolatey:** ship at most 3 scripts to clear the moderator guideline ([#83](https://github.com/ops4life/awsp/issues/83)) ([4d3cbed](https://github.com/ops4life/awsp/commit/4d3cbedbf31c82cf4f008c2c66fb65232ff1641c))
+
 ## [1.13.6](https://github.com/ops4life/awsp/compare/v1.13.5...v1.13.6) (2026-10-31)
 
 

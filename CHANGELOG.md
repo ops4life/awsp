@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.13.8](https://github.com/ops4life/awsp/compare/v1.13.7...v1.13.8) (2026-11-01)
+
+
+### Bug Fixes
+
+* **ci:** pass the winget token via WINGET_CREATE_GITHUB_TOKEN ([#84](https://github.com/ops4life/awsp/issues/84)) ([b509dc4](https://github.com/ops4life/awsp/commit/b509dc450b5276dd50dc642acd8dd34c15cb4ef8))
+
 ## [1.13.7](https://github.com/ops4life/awsp/compare/v1.13.6...v1.13.7) (2026-11-01)
 
 

@@ -171,6 +171,8 @@ Upgrade to latest version:
 awsp --upgrade
 ```
 
+awsp prints a one-line hint when a newer release exists, checked at most once a day (cached in `~/.config/awsp/update_check`). Skip it with `-q`, or disable it with `export AWSP_NO_UPDATE_CHECK=1`.
+
 ### Shell Completion
 
 **Zsh**: Tab completion is automatically enabled after installation. Press `<TAB>` after typing `awsp` to complete profile names and options.

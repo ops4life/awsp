@@ -61,6 +61,7 @@ Options:
   -c, --current      Print current AWS profile and exit
   -u, --unset        Unset AWS profile & static creds and exit
   -U, --upgrade      Show how to upgrade awsp for this install method
+      --uninstall    Show how to uninstall awsp for this install method
   -a, --add          Add a new profile (SSO or static credentials) and switch to it
   -r, --remove       Remove a profile (prompts for selection if omitted)
   -m, --modify       Modify/reconfigure an existing profile (prompts if omitted)
@@ -136,6 +137,28 @@ function _awsp_upgrade {
   }
   Write-Host 'awsp was installed with the install script; upgrade by re-running it:'
   Write-Host '  irm https://raw.githubusercontent.com/ops4life/awsp/main/install.ps1 | iex'
+}
+
+function _awsp_uninstall {
+  $path = [string]$global:_AWSP_SCRIPT
+  $dir = ''
+  if ($path) { $dir = Split-Path -Parent $path }
+  if ($dir -match '(?i)[\\/]chocolatey[\\/]') {
+    Write-Host 'awsp was installed with Chocolatey; uninstall with: choco uninstall awsp'
+    return
+  }
+  if ($dir -match '(?i)[\\/](WinGet[\\/]|Programs[\\/]awsp)') {
+    Write-Host 'awsp was installed with winget; uninstall with: winget uninstall ops4life.awsp'
+    return
+  }
+  $root = ''
+  if ($dir) { $root = Split-Path -Parent $dir }
+  if ($root -and (Test-Path -LiteralPath (Join-Path $root '.git'))) {
+    Write-Host "awsp is running from a git checkout; remove the load line from your `$PROFILE and delete `"$root`""
+    return
+  }
+  Write-Host 'awsp was installed with the install script; uninstall by running:'
+  Write-Host '  $env:AWSP_UNINSTALL=1; irm https://raw.githubusercontent.com/ops4life/awsp/main/install.ps1 | iex'
 }
 
 # "[profile x]" / "[ x ]" -> "x"; returns $null when the line is not a section header.
@@ -275,7 +298,7 @@ function _awsp_remove_section([string]$path, [string]$name, [bool]$isConfig) {
 function awsp {
   $ErrorActionPreference = 'Continue'
   $listOnly = $false; $showCurrent = $false; $forceLogin = $false; $unsetOnly = $false
-  $upgrade = $false; $addProfile = $false; $removeProfile = $false; $modifyProfile = $false
+  $upgrade = $false; $uninstall = $false; $addProfile = $false; $removeProfile = $false; $modifyProfile = $false
   $verify = 'auto'   # auto|on|off
   $quiet = $false
   $outfmt = 'table'  # table|json
@@ -297,6 +320,7 @@ function awsp {
       { $_ -cin '-c', '--current' } { $showCurrent = $true }
       { $_ -cin '-u', '--unset' } { $unsetOnly = $true }
       { $_ -cin '-U', '--upgrade' } { $upgrade = $true }
+      '--uninstall' { $uninstall = $true }
       { $_ -cin '-a', '--add' } { $addProfile = $true }
       { $_ -cin '-r', '--remove' } { $removeProfile = $true }
       { $_ -cin '-m', '--modify' } { $modifyProfile = $true }
@@ -317,6 +341,7 @@ function awsp {
   }
   if ($unsetOnly) { _awsp_unset $quiet; $global:LASTEXITCODE = 0; return }
   if ($upgrade) { _awsp_upgrade; $global:LASTEXITCODE = 0; return }
+  if ($uninstall) { _awsp_uninstall; $global:LASTEXITCODE = 0; return }
 
   _awsp_update_hint $quiet
 

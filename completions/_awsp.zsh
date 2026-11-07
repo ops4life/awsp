@@ -19,6 +19,7 @@ _awsp() {
     '--unset[unset env]' \
     '-U[upgrade awsp]' \
     '--upgrade[upgrade awsp]' \
+    '--uninstall[uninstall awsp]' \
     '-a[add a new profile]' \
     '--add[add a new profile]' \
     '-r[remove a profile]' \

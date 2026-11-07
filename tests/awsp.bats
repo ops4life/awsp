@@ -343,6 +343,34 @@ _add_with_fake_brew() {
   [ ! -d "$HOME/opt/awsp/share/awsp.backup" ]
 }
 
+@test "awsp --uninstall removes the install dir and rc lines" {
+  _with_mock_aws
+  d="$HOME/.config/awsp"
+  mkdir -p "$d"
+  cp "$AWSP_SH" "$d/awsp.sh"
+  line="[ -f \"$d/awsp.sh\" ] && . \"$d/awsp.sh\""
+  printf 'keep\n%s\n' "$line" > "$HOME/.bashrc"
+  source "$d/awsp.sh"
+  run awsp --uninstall <<< "n"
+  [ "$status" -eq 1 ]
+  [ -d "$d" ]
+  run awsp --uninstall <<< "y"
+  [ "$status" -eq 0 ]
+  [ ! -d "$d" ]
+  [ "$(cat "$HOME/.bashrc")" = "keep" ]
+}
+
+@test "awsp --uninstall defers to Homebrew for brew-installed copies" {
+  _with_mock_aws
+  mkdir -p "$HOME/opt/awsp/share/awsp"
+  cp "$AWSP_SH" "$HOME/opt/awsp/share/awsp/awsp.sh"
+  source "$HOME/opt/awsp/share/awsp/awsp.sh"
+  run awsp --uninstall
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"brew uninstall awsp"* ]]
+  [ -d "$HOME/opt/awsp/share/awsp" ]
+}
+
 @test "every flag the parser accepts is listed in --help, docs and completions" {
   ROOT="$(cd "$(dirname "$BATS_TEST_FILENAME")/.." && pwd)"
   source "$AWSP_SH"

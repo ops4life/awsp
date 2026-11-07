@@ -5,11 +5,11 @@ _awsp_complete() {
   cur="${COMP_WORDS[COMP_CWORD]}"
   prev="${COMP_WORDS[COMP_CWORD-1]}"
   case "$prev" in
-    -h|--help|-V|--version|-l|--list|-c|--current|-u|--unset|-U|--upgrade|-a|--add|-r|--remove|-m|--modify|-L|--login|-v|--verify|--no-verify|--json|-q|--quiet) return 0 ;;
+    -h|--help|-V|--version|-l|--list|-c|--current|-u|--unset|-U|--upgrade|--uninstall|-a|--add|-r|--remove|-m|--modify|-L|--login|-v|--verify|--no-verify|--json|-q|--quiet) return 0 ;;
   esac
   case "$cur" in
     -*)
-      mapfile -t COMPREPLY < <(compgen -W "-h --help -V --version -l --list -c --current -u --unset -U --upgrade -a --add -r --remove -m --modify -L --login -v --verify --no-verify --json -q --quiet" -- "$cur")
+      mapfile -t COMPREPLY < <(compgen -W "-h --help -V --version -l --list -c --current -u --unset -U --upgrade --uninstall -a --add -r --remove -m --modify -L --login -v --verify --no-verify --json -q --quiet" -- "$cur")
       return 0 ;;
   esac
   if command -v aws >/dev/null 2>&1; then

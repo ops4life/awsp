@@ -3,7 +3,7 @@
 
 $script:_AwspFlags = @(
   '-h', '--help', '-V', '--version', '-l', '--list', '-c', '--current', '-u', '--unset',
-  '-U', '--upgrade', '-a', '--add', '-r', '--remove', '-m', '--modify', '-L', '--login',
+  '-U', '--upgrade', '--uninstall', '-a', '--add', '-r', '--remove', '-m', '--modify', '-L', '--login',
   '-v', '--verify', '--no-verify', '--json', '-q', '--quiet'
 )
 

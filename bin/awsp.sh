@@ -188,6 +188,7 @@ awsp() {
   force_login=0
   unset_only=0
   upgrade=0
+  uninstall=0
   add_profile=0
   remove_profile=0
   modify_profile=0
@@ -210,6 +211,7 @@ Options:
   -c, --current      Print current AWS profile and exit
   -u, --unset        Unset AWS profile & static creds and exit
   -U, --upgrade      Upgrade awsp to latest version
+      --uninstall    Remove awsp and its rc file entries (asks first)
   -a, --add          Add a new profile (SSO or static credentials) and switch to it
   -r, --remove       Remove a profile (prompts for selection if omitted)
   -m, --modify       Modify/reconfigure an existing profile (prompts if omitted)
@@ -230,6 +232,7 @@ USG
       -c|--current) show_current=1 ;;
       -u|--unset) unset_only=1 ;;
       -U|--upgrade) upgrade=1 ;;
+      --uninstall) uninstall=1 ;;
       -a|--add) add_profile=1 ;;
       -r|--remove) remove_profile=1 ;;
       -m|--modify) modify_profile=1 ;;
@@ -776,6 +779,57 @@ USG
     fi
   }
 
+  _awsp_uninstall() {
+    _script_path="${_AWSP_SCRIPT:-${BASH_SOURCE[0]:-${(%):-%x}}}"
+    _install_dir="$(cd "$(dirname "$_script_path")" && pwd)"
+
+    # Package-managed installs must be removed by their package manager
+    case "$_install_dir" in
+      */Cellar/awsp/*/share/awsp|*/opt/awsp/share/awsp|/opt/homebrew/share/awsp|/usr/local/share/awsp|*/.linuxbrew/share/awsp)
+        echo "awsp was installed with Homebrew; uninstall with: brew uninstall awsp"
+        return 0
+        ;;
+      /usr/share/awsp)
+        echo "awsp was installed from a .deb package; uninstall with: sudo apt remove awsp"
+        return 0
+        ;;
+    esac
+
+    # A git checkout is the user's repo: clean the rc files but never delete it
+    _remove_dir=1
+    [ "$(_awsp_detect_install_type)" = "git" ] && _remove_dir=0
+
+    if [ "$_remove_dir" -eq 1 ]; then
+      echo "This will delete $_install_dir and remove awsp from your shell rc files."
+    else
+      echo "This will remove awsp from your shell rc files (the git checkout is kept)."
+    fi
+    printf 'Proceed with uninstall? (y/N): '
+    read -r response
+    case "$response" in
+      y|Y|yes|YES) ;;
+      *) echo "Uninstall cancelled."; return 1 ;;
+    esac
+
+    # Drop every rc line that sources this install
+    for _rc in "$HOME/.zshrc" "$HOME/.zprofile" "$HOME/.bashrc" "$HOME/.bash_profile" "$HOME/.profile"; do
+      [ -f "$_rc" ] && [ -w "$_rc" ] || continue
+      grep -qF -- "$_install_dir/awsp.sh" "$_rc" || continue
+      _rc_tmp="$(mktemp)" || continue
+      grep -vF -- "$_install_dir/awsp.sh" "$_rc" > "$_rc_tmp"
+      cat "$_rc_tmp" > "$_rc"
+      rm -f "$_rc_tmp"
+      echo "→ Cleaned $_rc"
+    done
+
+    _awsp_unset
+    [ "$_remove_dir" -eq 1 ] && rm -rf "$_install_dir" && echo "→ Removed $_install_dir"
+    rm -rf "$HOME/.config/awsp" 2>/dev/null || true
+
+    echo "✓ awsp uninstalled. Open a new shell to finish (this one still has the awsp function)."
+    return 0
+  }
+
   # Quick actions
   if [ "$show_current" -eq 1 ]; then
     if [ -n "${AWS_PROFILE-}" ]; then echo "$AWS_PROFILE"; else echo "(no AWS_PROFILE set)"; fi
@@ -788,6 +842,11 @@ USG
 
   if [ "$upgrade" -eq 1 ]; then
     _awsp_upgrade
+    return $?
+  fi
+
+  if [ "$uninstall" -eq 1 ]; then
+    _awsp_uninstall
     return $?
   fi
 

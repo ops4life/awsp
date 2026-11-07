@@ -67,10 +67,10 @@ echo 'source ~/.oh-my-zsh/custom/plugins/awsp/bin/awsp.sh' >> ~/.zshrc
 ## Uninstall
 
 ```bash
-make uninstall
+awsp --uninstall   # or: make uninstall
 ```
 
-Removes all installed files and cleans up shell rc file entries.
+Removes all installed files and cleans up shell rc file entries. Homebrew and .deb installs print the package-manager command instead; a git checkout is never deleted.
 
 ## Usage
 
@@ -105,6 +105,7 @@ Options:
   -c, --current      Print current AWS profile and exit
   -u, --unset        Unset AWS profile & static creds and exit
   -U, --upgrade      Upgrade awsp to latest version
+      --uninstall    Remove awsp and its rc file entries (asks first)
   -a, --add          Add a new profile (SSO or static credentials) and switch to it
   -r, --remove       Remove a profile (prompts for selection if omitted)
   -m, --modify       Modify/reconfigure an existing profile (prompts if omitted)

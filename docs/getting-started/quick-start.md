@@ -79,7 +79,7 @@ This switches to the profile and confirms your AWS identity via STS.
 To completely remove awsp:
 
 ```bash
-make uninstall
+awsp --uninstall   # or: make uninstall
 ```
 
 This removes all installed files and cleans up shell RC file entries.

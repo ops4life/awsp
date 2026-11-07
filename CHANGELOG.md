@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+# [1.15.0](https://github.com/ops4life/awsp/compare/v1.14.0...v1.15.0) (2026-11-07)
+
+
+### Features
+
+* hint once a day when a newer awsp release is available ([#88](https://github.com/ops4life/awsp/issues/88)) ([39dd3a4](https://github.com/ops4life/awsp/commit/39dd3a4ff694cf416c8d9a9cbc8ad88023434c9a))
+
 # [1.14.0](https://github.com/ops4life/awsp/compare/v1.13.8...v1.14.0) (2026-11-07)
 
 

@@ -17,6 +17,7 @@ setup() {
 
   MOCK_AWS_LOG="$HOME/aws-calls.log"
   export MOCK_AWS_LOG
+  export AWSP_NO_UPDATE_CHECK=1
   unset MOCK_AWS_PROFILES MOCK_AWS_STS_FAIL MOCK_AWS_SSO_LOGIN_EXIT MOCK_AWS_CONFIGURE_EXIT
 }
 
@@ -359,4 +360,44 @@ _add_with_fake_brew() {
     done
   done
   [ -z "$missing" ] || { echo "flags missing from:$missing"; false; }
+}
+
+# ---------- update hint ----------
+
+# Mock curl returning a fixed latest release tag.
+_with_mock_curl() {
+  mkdir -p "$HOME/bin"
+  cat > "$HOME/bin/curl" <<'MOCK'
+#!/bin/sh
+echo "  \"tag_name\": \"v$MOCK_LATEST\","
+MOCK
+  chmod +x "$HOME/bin/curl"
+  PATH="$HOME/bin:$FIXTURES_BIN:$ORIG_PATH"
+}
+
+@test "update hint: prints once a day when a newer release exists" {
+  _with_mock_curl
+  unset AWSP_NO_UPDATE_CHECK
+  MOCK_LATEST=99.0.0 && export MOCK_LATEST
+  source "$AWSP_SH"
+  run awsp --list
+  [[ "$output" == *"awsp 99.0.0 is available"* ]]
+  # Second call same day uses cache: no fetch (curl now reports older)
+  MOCK_LATEST=0.0.1
+  run awsp --list
+  [[ "$output" == *"awsp 99.0.0 is available"* ]]
+  grep -q "^$(date +%Y%m%d) 99.0.0$" "$HOME/.config/awsp/update_check"
+}
+
+@test "update hint: silent when up to date or opted out" {
+  _with_mock_curl
+  unset AWSP_NO_UPDATE_CHECK
+  MOCK_LATEST=0.0.1 && export MOCK_LATEST
+  source "$AWSP_SH"
+  run awsp --list
+  [[ "$output" != *"is available"* ]]
+  rm -f "$HOME/.config/awsp/update_check"
+  MOCK_LATEST=99.0.0
+  AWSP_NO_UPDATE_CHECK=1 run awsp --list
+  [[ "$output" != *"is available"* ]]
 }

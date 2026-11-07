@@ -80,6 +80,42 @@ function _awsp_unset([bool]$quiet) {
   if (-not $quiet) { Write-Host '-> AWS env cleared' }
 }
 
+# Latest release version (no leading "v"), or '' on any failure. Overridden in tests.
+function _awsp_fetch_latest {
+  try {
+    [Net.ServicePointManager]::SecurityProtocol = [Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12
+    $r = Invoke-RestMethod -Uri 'https://api.github.com/repos/ops4life/awsp/releases/latest' -Headers @{ 'User-Agent' = 'awsp' } -TimeoutSec 3
+    return ([string]$r.tag_name).TrimStart('v')
+  } catch { return '' }
+}
+
+# Once a day, print a one-line hint if a newer release exists. Opt out: AWSP_NO_UPDATE_CHECK=1 or -q.
+function _awsp_update_hint([bool]$quiet) {
+  if ($quiet -or $env:AWSP_NO_UPDATE_CHECK) { return }
+  $file = Join-Path (_awsp_state_dir) 'update_check'
+  $today = (Get-Date).ToString('yyyyMMdd')
+  $date = ''; $latest = ''
+  if (Test-Path -LiteralPath $file -PathType Leaf) {
+    $parts = ([string](Get-Content -LiteralPath $file -TotalCount 1)).Trim() -split '\s+'
+    $date = $parts[0]
+    if ($parts.Count -gt 1) { $latest = $parts[1] }
+  }
+  if ($date -ne $today) {
+    $latest = [string](_awsp_fetch_latest)
+    # Cache failures too, so an offline shell does not retry on every call.
+    try {
+      New-Item -ItemType Directory -Force -Path (_awsp_state_dir) | Out-Null
+      Set-Content -LiteralPath $file -Value "$today $latest"
+    } catch { $null = $_ }
+  }
+  if (-not $latest) { return }
+  try {
+    if ([version]$global:AWSP_VERSION -lt [version]$latest) {
+      Write-Host "awsp $latest is available (installed $global:AWSP_VERSION). Run: awsp --upgrade"
+    }
+  } catch { $null = $_ }
+}
+
 function _awsp_upgrade {
   $path = [string]$global:_AWSP_SCRIPT
   $dir = ''
@@ -281,6 +317,8 @@ function awsp {
   }
   if ($unsetOnly) { _awsp_unset $quiet; $global:LASTEXITCODE = 0; return }
   if ($upgrade) { _awsp_upgrade; $global:LASTEXITCODE = 0; return }
+
+  _awsp_update_hint $quiet
 
   # ---------- collect profiles ----------
   $hasAws = [bool](Get-Command aws -ErrorAction SilentlyContinue)

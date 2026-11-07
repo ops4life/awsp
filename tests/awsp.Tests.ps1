@@ -15,6 +15,7 @@ BeforeEach {
   New-Item -ItemType Directory -Force -Path (Join-Path $script:TestHome '.aws') | Out-Null
   $env:USERPROFILE = $script:TestHome
   $env:MOCK_AWS_LOG = Join-Path $script:TestHome 'aws-calls.log'
+  $env:AWSP_NO_UPDATE_CHECK = '1'
   foreach ($v in 'MOCK_AWS_PROFILES', 'MOCK_AWS_STS_FAIL', 'MOCK_AWS_SSO_LOGIN_EXIT', 'MOCK_AWS_CONFIGURE_EXIT',
                  'AWS_PROFILE', 'AWS_DEFAULT_PROFILE', 'AWS_SDK_LOAD_CONFIG',
                  'AWS_ACCESS_KEY_ID', 'AWS_SECRET_ACCESS_KEY', 'AWS_SESSION_TOKEN') {
@@ -28,6 +29,7 @@ BeforeEach {
 AfterEach {
   $env:PATH = $script:OrigPath
   $env:USERPROFILE = $script:OrigUserProfile
+  Remove-Item Env:AWSP_NO_UPDATE_CHECK -ErrorAction SilentlyContinue
   Remove-Item -LiteralPath $script:TestHome -Recurse -Force -ErrorAction SilentlyContinue
 }
 
@@ -580,6 +582,31 @@ Describe 'completion through the real completion engine' {
     $out = @(& $hostExe -NoProfile -Command $cmd)
     $out[0] | Should -Be '--json'
     $out[1] | Should -Match 'prodx'
+  }
+}
+
+Describe 'update hint' {
+  It 'prints once a day when a newer release exists, then uses the cache' {
+    Remove-Item Env:AWSP_NO_UPDATE_CHECK
+    function _awsp_fetch_latest { '99.0.0' }
+    $out = awsp --list *>&1 | Out-String
+    $out | Should -Match 'awsp 99\.0\.0 is available'
+    function _awsp_fetch_latest { '0.0.1' }
+    $out = awsp --list *>&1 | Out-String
+    $out | Should -Match 'awsp 99\.0\.0 is available'
+    (Get-Content -LiteralPath (Join-Path $script:TestHome '.config/awsp/update_check') -TotalCount 1) |
+      Should -Be ((Get-Date).ToString('yyyyMMdd') + ' 99.0.0')
+  }
+
+  It 'is silent when up to date, quiet, or opted out' {
+    Remove-Item Env:AWSP_NO_UPDATE_CHECK
+    function _awsp_fetch_latest { '0.0.1' }
+    (awsp --list *>&1 | Out-String) | Should -Not -Match 'is available'
+    Remove-Item -LiteralPath (Join-Path $script:TestHome '.config/awsp/update_check')
+    function _awsp_fetch_latest { '99.0.0' }
+    (awsp -q --list *>&1 | Out-String) | Should -Not -Match 'is available'
+    $env:AWSP_NO_UPDATE_CHECK = '1'
+    (awsp --list *>&1 | Out-String) | Should -Not -Match 'is available'
   }
 }
 

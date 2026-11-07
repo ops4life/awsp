@@ -412,7 +412,7 @@ USG
     fi
 
     _api_url="https://api.github.com/repos/ops4life/awsp/releases/latest"
-    _response=$(curl -s -f "$_api_url" 2>/dev/null) || {
+    _response=$(curl -s -f --max-time 3 "$_api_url" 2>/dev/null) || {
       echo "Error: Failed to fetch latest version from GitHub" >&2
       return 1
     }
@@ -448,6 +448,31 @@ USG
     if [ "$_v1_patch" -gt "$_v2_patch" ]; then return 1; fi
     if [ "$_v1_patch" -lt "$_v2_patch" ]; then return 2; fi
 
+    return 0
+  }
+
+  # Once a day, print a one-line hint if a newer release exists (stderr; opt out: AWSP_NO_UPDATE_CHECK=1)
+  _awsp_update_hint() {
+    [ -n "${AWSP_NO_UPDATE_CHECK-}" ] && return 0
+    [ "$quiet" -eq 1 ] && return 0
+    _uh_file="$HOME/.config/awsp/update_check"
+    _uh_today="$(date +%Y%m%d)"
+    _uh_date=""
+    _uh_latest=""
+    if [ -f "$_uh_file" ]; then
+      read -r _uh_date _uh_latest <"$_uh_file" || true
+    fi
+    if [ "$_uh_date" != "$_uh_today" ]; then
+      _uh_latest="$(_awsp_fetch_latest_version 2>/dev/null | head -1)"
+      mkdir -p "$HOME/.config/awsp" 2>/dev/null
+      # Cache failures too, so an offline shell does not retry on every call
+      printf '%s %s\n' "$_uh_today" "$_uh_latest" >"$_uh_file" 2>/dev/null || true
+    fi
+    [ -n "$_uh_latest" ] || return 0
+    _awsp_version_compare "$AWSP_VERSION" "$_uh_latest"
+    if [ $? -eq 2 ]; then
+      echo "awsp $_uh_latest is available (installed $AWSP_VERSION). Run: awsp --upgrade" >&2
+    fi
     return 0
   }
 
@@ -765,6 +790,8 @@ USG
     _awsp_upgrade
     return $?
   fi
+
+  _awsp_update_hint
 
   # ---------- collect profiles (needed by add/remove/modify pickers too) ----------
   has_aws=0

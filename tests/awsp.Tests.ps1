@@ -336,9 +336,66 @@ Describe '--add' {
   It 'requires the aws CLI' {
     Remove-Item Function:\aws
     $env:PATH = Join-Path $script:TestHome 'empty'
+    Set-AwspInput 'n'
     $out = awsp --add *>&1 | Out-String
     $LASTEXITCODE | Should -Be 1
     $out | Should -Match 'aws CLI is required'
+  }
+
+  Context 'aws CLI install offer' {
+    BeforeEach {
+      Remove-Item Function:\aws
+      $env:PATH = Join-Path $script:TestHome 'empty'
+      function _awsp_is_interactive { $true }
+    }
+    AfterEach {
+      Remove-Item Function:\winget, Function:\aws -ErrorAction SilentlyContinue
+    }
+
+    It 'installs, continues, and verifies despite noisy winget output' {
+      function global:winget {
+        'noisy winget output'
+        # Install the full mock aws as a global function, as a real install would put aws on PATH.
+        Invoke-Expression ($global:AwspMockAwsSource -replace 'function aws', 'function global:aws')
+        $global:LASTEXITCODE = 0
+      }
+      $global:AwspMockAwsSource = Get-Content -LiteralPath $script:MockAws -Raw
+      Set-AwspInput 'y', 'dev', '2'
+      awsp --add *>&1 | Out-Null
+      $LASTEXITCODE | Should -Be 0
+      $log = Get-Content -LiteralPath $env:MOCK_AWS_LOG -Raw
+      $log | Should -Match 'configure --profile dev'
+      $log | Should -Match 'sts get-caller-identity'
+    }
+
+    It 'stops when winget prints output but fails' {
+      function global:winget { 'noisy winget output'; $global:LASTEXITCODE = 1 }
+      Set-AwspInput 'y', 'dev', '2'
+      $out = awsp --add *>&1 | Out-String
+      $LASTEXITCODE | Should -Be 1
+      $out | Should -Match 'aws CLI is required'
+      Test-Path $env:MOCK_AWS_LOG | Should -BeFalse
+    }
+
+    It 'does not prompt on a non-interactive host' {
+      function global:winget { throw 'winget must not run' }
+      function _awsp_is_interactive { $false }
+      Set-AwspInput 'y'
+      awsp --add *>&1 | Out-Null
+      $LASTEXITCODE | Should -Be 1
+      $global:AwspTestInputs.Count | Should -Be 1
+    }
+
+    It 'keeps session-only PATH entries after install' {
+      function global:winget {
+        function global:aws { $global:LASTEXITCODE = 0 }
+        $global:LASTEXITCODE = 0
+      }
+      $env:PATH += [IO.Path]::PathSeparator + 'session-only-dir'
+      Set-AwspInput 'y', 'dev', '2'
+      awsp --add --no-verify --quiet *>&1 | Out-Null
+      $env:PATH | Should -Match 'session-only-dir'
+    }
   }
 
   It 're-prompts on an empty profile name' {

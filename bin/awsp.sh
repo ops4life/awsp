@@ -849,6 +849,7 @@ USG
     if ! command -v aws >/dev/null 2>&1; then
       echo "awsp: aws CLI is required to add a profile" >&2
       _awsp_offer_install_aws || return 1
+      has_aws=1
     fi
 
     printf 'New profile name: '

@@ -23,14 +23,27 @@ function _awsp_read([string]$prompt) {
   return (Read-Host $prompt)
 }
 
+# Overridable in tests; winget prompts must never block a headless host.
+function _awsp_is_interactive {
+  return ([Environment]::UserInteractive -and -not [Console]::IsInputRedirected)
+}
+
 # Offer to install AWS CLI v2 via winget; true once `aws` is on PATH.
 function _awsp_offer_install_aws {
   if (-not (Get-Command winget -ErrorAction SilentlyContinue)) { return $false }
+  if (-not (_awsp_is_interactive)) { return $false }
   $ans = _awsp_read 'Install AWS CLI v2 now with winget? (y/N)'
   if ($ans -notmatch '^(y|yes)$') { return $false }
-  winget install --id Amazon.AWSCLI -e --accept-package-agreements --accept-source-agreements
-  # winget updates the registry PATH only; refresh this session's copy.
-  $env:PATH = [Environment]::GetEnvironmentVariable('PATH', 'Machine') + ';' + [Environment]::GetEnvironmentVariable('PATH', 'User')
+  # Out-Host keeps winget's output out of this function's return value.
+  & winget install --id Amazon.AWSCLI -e --accept-package-agreements --accept-source-agreements | Out-Host
+  if ($LASTEXITCODE -ne 0) { return $false }
+  # winget updates the registry PATH only; append what this session lacks, keeping session-only entries.
+  $have = @($env:PATH -split ';')
+  foreach ($scope in 'Machine', 'User') {
+    foreach ($dir in ([Environment]::GetEnvironmentVariable('PATH', $scope) -split ';')) {
+      if ($dir -and ($have -notcontains $dir)) { $env:PATH += ';' + $dir; $have += $dir }
+    }
+  }
   return [bool](Get-Command aws -ErrorAction SilentlyContinue)
 }
 
@@ -278,6 +291,7 @@ function awsp {
     if (-not $hasAws) {
       _awsp_err 'awsp: aws CLI is required to add a profile'
       if (-not (_awsp_offer_install_aws)) { $global:LASTEXITCODE = 1; return }
+      $hasAws = $true
     }
     $newName = _awsp_read 'New profile name'
     $tries = 1

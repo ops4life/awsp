@@ -215,6 +215,44 @@ write_creds_profile() {
   [[ "$output" == *"aws CLI is required"* ]]
 }
 
+# Run `awsp --add` on a pty (the install offer only prompts on a tty) with a
+# fake macOS whose `brew install awscli` either provides aws or fails.
+_add_with_fake_brew() {
+  _without_aws
+  _fake="$HOME/fakebin"
+  mkdir -p "$_fake"
+  printf '#!/bin/sh\necho Darwin\n' > "$_fake/uname"
+  if [ "$1" = ok ]; then
+    printf '#!/bin/sh\necho "==> noise"\ncp "%s/aws" "%s/aws"\n' "$FIXTURES_BIN" "$_fake" > "$_fake/brew"
+  else
+    printf '#!/bin/sh\nexit 1\n' > "$_fake/brew"
+  fi
+  chmod +x "$_fake/uname" "$_fake/brew"
+  printf 'PATH="%s:%s"\n. "%s"\nawsp --add\nexit $?\n' "$_fake" "$PATH" "$AWSP_SH" > "$HOME/driver.sh"
+  run bash -c "printf 'y\ndev\n2\n' | script -qec 'bash $HOME/driver.sh' /dev/null"
+}
+
+@test "--add offers to install aws CLI, continues, and verifies" {
+  _add_with_fake_brew ok
+  [ "$status" -eq 0 ]
+  grep -q -- "configure --profile dev" "$MOCK_AWS_LOG"
+  grep -q "sts get-caller-identity" "$MOCK_AWS_LOG"
+}
+
+@test "--add stops when the aws CLI install fails" {
+  _add_with_fake_brew fail
+  [ "$status" -eq 1 ]
+  [ ! -f "$MOCK_AWS_LOG" ]
+}
+
+@test "--add does not prompt to install without a tty" {
+  _without_aws
+  source "$AWSP_SH"
+  run awsp --add </dev/null
+  [ "$status" -eq 1 ]
+  [[ "$output" != *"Install AWS CLI"* ]]
+}
+
 @test "--add re-prompts on an empty profile name" {
   _with_mock_aws
   source "$AWSP_SH"

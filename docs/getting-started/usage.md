@@ -188,6 +188,20 @@ awsp --upgrade
 
 This supports both git-based installations (pulls latest) and release-based installations (downloads latest release).
 
+### Update Hint
+
+Once a day, awsp checks the latest GitHub release and prints a one-line hint to stderr when a newer version exists:
+
+```
+awsp 1.15.0 is available (installed 1.14.0). Run: awsp --upgrade
+```
+
+The result is cached in `~/.config/awsp/update_check`, so the check adds at most a 3-second network wait on the first call of each day. Failed checks (for example offline) are cached too. Skip the check with `-q` or disable it entirely:
+
+```bash
+export AWSP_NO_UPDATE_CHECK=1
+```
+
 ## How It Works
 
 ```mermaid

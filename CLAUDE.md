@@ -52,6 +52,10 @@ git push -u origin feature/your-feature-name
 
 The `main` branch is protected and triggers automated releases via semantic-release on merge.
 
+### Documentation
+
+**Always update the docs in the same change as any new implementation** (new feature, flag, env var, or behavior change). At minimum check `README.md` and `docs/getting-started/usage.md`, plus the `--help` text and the shell/PowerShell completions when a flag changes.
+
 ### Commit Guidelines
 
 When creating commits:

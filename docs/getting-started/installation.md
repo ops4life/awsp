@@ -13,8 +13,6 @@
 Recent Homebrew versions refuse to load formulae from a tap you have not trusted, so the
 install needs the `brew trust` step. If your Homebrew has no `brew trust` command, skip it.
 
-The winget package is awaiting review in [microsoft/winget-pkgs](https://github.com/microsoft/winget-pkgs/pulls?q=ops4life.awsp), so `winget install ops4life.awsp` reports "No package found" until it is merged. Use the PowerShell install script meanwhile.
-
 `awsp` is a shell function, so a package can only install the files — your shell
 must source them. After installing, add the matching line to `~/.bashrc` / `~/.zshrc`
 (the install script and `make install` do this for you):

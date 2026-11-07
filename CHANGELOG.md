@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+# [1.14.0](https://github.com/ops4life/awsp/compare/v1.13.8...v1.14.0) (2026-11-07)
+
+
+### Features
+
+* offer to install aws CLI when awsp --add finds it missing ([#87](https://github.com/ops4life/awsp/issues/87)) ([f00bfa5](https://github.com/ops4life/awsp/commit/f00bfa5e24363a487074c3fcb7ff5a0cbd3ffbf9))
+
 ## [1.13.8](https://github.com/ops4life/awsp/compare/v1.13.7...v1.13.8) (2026-11-01)
 
 

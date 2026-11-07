@@ -23,6 +23,17 @@ function _awsp_read([string]$prompt) {
   return (Read-Host $prompt)
 }
 
+# Offer to install AWS CLI v2 via winget; true once `aws` is on PATH.
+function _awsp_offer_install_aws {
+  if (-not (Get-Command winget -ErrorAction SilentlyContinue)) { return $false }
+  $ans = _awsp_read 'Install AWS CLI v2 now with winget? (y/N)'
+  if ($ans -notmatch '^(y|yes)$') { return $false }
+  winget install --id Amazon.AWSCLI -e --accept-package-agreements --accept-source-agreements
+  # winget updates the registry PATH only; refresh this session's copy.
+  $env:PATH = [Environment]::GetEnvironmentVariable('PATH', 'Machine') + ';' + [Environment]::GetEnvironmentVariable('PATH', 'User')
+  return [bool](Get-Command aws -ErrorAction SilentlyContinue)
+}
+
 function _awsp_usage {
   Write-Output @'
 Usage: awsp [options] [PROFILE]
@@ -264,7 +275,10 @@ function awsp {
   $count = $profiles.Count
 
   if ($addProfile) {
-    if (-not $hasAws) { _awsp_err 'awsp: aws CLI is required to add a profile'; $global:LASTEXITCODE = 1; return }
+    if (-not $hasAws) {
+      _awsp_err 'awsp: aws CLI is required to add a profile'
+      if (-not (_awsp_offer_install_aws)) { $global:LASTEXITCODE = 1; return }
+    }
     $newName = _awsp_read 'New profile name'
     $tries = 1
     while ([string]::IsNullOrEmpty($newName)) {

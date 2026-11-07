@@ -336,6 +336,7 @@ Describe '--add' {
   It 'requires the aws CLI' {
     Remove-Item Function:\aws
     $env:PATH = Join-Path $script:TestHome 'empty'
+    Set-AwspInput 'n'
     $out = awsp --add *>&1 | Out-String
     $LASTEXITCODE | Should -Be 1
     $out | Should -Match 'aws CLI is required'

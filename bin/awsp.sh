@@ -814,10 +814,41 @@ USG
     return 1
   }
 
+  # Offer to install AWS CLI v2 (interactive only). Returns 0 once `aws` is on PATH.
+  _awsp_offer_install_aws() {
+    [ -t 0 ] || return 1
+    printf 'Install AWS CLI v2 now? (y/N): '
+    read -r _ans
+    case "$_ans" in y|Y|yes|YES) ;; *) return 1 ;; esac
+    case "$(uname -s)" in
+      Darwin)
+        if command -v brew >/dev/null 2>&1; then
+          brew install awscli || return 1
+        else
+          echo "awsp: install Homebrew or see https://aws.amazon.com/cli/" >&2; return 1
+        fi ;;
+      Linux)
+        for _t in curl unzip; do
+          command -v "$_t" >/dev/null 2>&1 || { echo "awsp: $_t is required to install aws CLI" >&2; return 1; }
+        done
+        _tmp="$(mktemp -d)" || return 1
+        (
+          cd "$_tmp" &&
+          curl -fsSL "https://awscli.amazonaws.com/awscli-exe-linux-$(uname -m).zip" -o awscliv2.zip &&
+          unzip -q awscliv2.zip &&
+          ./aws/install -i "$HOME/.local/aws-cli" -b "$HOME/.local/bin" --update
+        ) || { rm -rf "$_tmp"; echo "awsp: aws CLI install failed" >&2; return 1; }
+        rm -rf "$_tmp"
+        case ":$PATH:" in *":$HOME/.local/bin:"*) ;; *) PATH="$HOME/.local/bin:$PATH"; export PATH ;; esac ;;
+      *) echo "awsp: see https://aws.amazon.com/cli/ to install aws CLI" >&2; return 1 ;;
+    esac
+    command -v aws >/dev/null 2>&1
+  }
+
   if [ "$add_profile" -eq 1 ]; then
     if ! command -v aws >/dev/null 2>&1; then
       echo "awsp: aws CLI is required to add a profile" >&2
-      return 1
+      _awsp_offer_install_aws || return 1
     fi
 
     printf 'New profile name: '

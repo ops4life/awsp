@@ -346,10 +346,10 @@ Describe '--add' {
     BeforeEach {
       Remove-Item Function:\aws
       $env:PATH = Join-Path $script:TestHome 'empty'
-      function global:_awsp_is_interactive { $true }
+      function _awsp_is_interactive { $true }
     }
     AfterEach {
-      Remove-Item Function:\global:winget, Function:\global:aws, Function:\global:_awsp_is_interactive -ErrorAction SilentlyContinue
+      Remove-Item Function:\winget, Function:\aws -ErrorAction SilentlyContinue
     }
 
     It 'installs, continues, and verifies despite noisy winget output' {
@@ -379,7 +379,7 @@ Describe '--add' {
 
     It 'does not prompt on a non-interactive host' {
       function global:winget { throw 'winget must not run' }
-      function global:_awsp_is_interactive { $false }
+      function _awsp_is_interactive { $false }
       Set-AwspInput 'y'
       awsp --add *>&1 | Out-Null
       $LASTEXITCODE | Should -Be 1

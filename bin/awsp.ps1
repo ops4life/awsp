@@ -106,14 +106,14 @@ function _awsp_update_hint([bool]$quiet) {
     try {
       New-Item -ItemType Directory -Force -Path (_awsp_state_dir) | Out-Null
       Set-Content -LiteralPath $file -Value "$today $latest"
-    } catch { }
+    } catch { $null = $_ }
   }
   if (-not $latest) { return }
   try {
     if ([version]$global:AWSP_VERSION -lt [version]$latest) {
       Write-Host "awsp $latest is available (installed $global:AWSP_VERSION). Run: awsp --upgrade"
     }
-  } catch { }
+  } catch { $null = $_ }
 }
 
 function _awsp_upgrade {

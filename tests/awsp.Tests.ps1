@@ -355,9 +355,11 @@ Describe '--add' {
     It 'installs, continues, and verifies despite noisy winget output' {
       function global:winget {
         'noisy winget output'
-        function global:aws { Add-Content -LiteralPath $env:MOCK_AWS_LOG -Value ($args -join ' '); $global:LASTEXITCODE = 0 }
+        # Install the full mock aws as a global function, as a real install would put aws on PATH.
+        Invoke-Expression ($global:AwspMockAwsSource -replace 'function aws', 'function global:aws')
         $global:LASTEXITCODE = 0
       }
+      $global:AwspMockAwsSource = Get-Content -LiteralPath $script:MockAws -Raw
       Set-AwspInput 'y', 'dev', '2'
       awsp --add *>&1 | Out-Null
       $LASTEXITCODE | Should -Be 0

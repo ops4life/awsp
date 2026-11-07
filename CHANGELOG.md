@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+# [1.16.0](https://github.com/ops4life/awsp/compare/v1.15.0...v1.16.0) (2026-11-07)
+
+
+### Features
+
+* add --uninstall flag ([#90](https://github.com/ops4life/awsp/issues/90)) ([59b7364](https://github.com/ops4life/awsp/commit/59b73641cb7e9c5f6756630377df1b90b95b676c))
+
 # [1.15.0](https://github.com/ops4life/awsp/compare/v1.14.0...v1.15.0) (2026-11-07)
 
 
